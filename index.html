@@ -1,0 +1,1958 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Constellations</title>
+    <style>
+        /* Reset default margins */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* 1. Theme Color Variables */
+        :root {
+            --bg-color: #f8fafc;
+            --text-color: #0f172a;
+            --track-bg: lightblue;
+            --thumb-bg: #f8fafc;
+            --filter: invert(0%) brightness(100%);
+        }
+
+        html:has(#theme-toggle:checked) {
+            --bg-color: black;
+            --text-color: darkred;
+            --track-bg: rgb(20, 20, 20);
+            --thumb-bg: black;
+            --filter: invert(30%) sepia(100%) saturate(5000%) hue-rotate(340deg) brightness(30%) contrast(100%);
+        }
+/* --filter: invert(30%) sepia(100%) saturate(5000%) hue-rotate(340deg) brightness(50%) contrast(100%); */
+/* --filter: invert(100%) sepia(40%) saturate(100%) hue-rotate(180deg) brightness(25%) contrast(80%); */
+/* --filter: invert(100%) sepia(0%) saturate(5000%) hue-rotate(178deg) brightness(50%) contrast(100%); */
+
+        .title {
+            margin-left: 6px;
+            opacity: 75%
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: system-ui, -apple-system, sans-serif;
+            transition: background-color 0.4s ease, color 0.4s ease;
+            padding: 5px;
+            margin: 0;
+        }
+
+        /* Header wrapper to push switch to the right */
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            margin-bottom: 0;
+        }
+
+        /* 2. Switch Container */
+        .theme-switch {
+            position: relative;
+            display: inline-block;
+            width: 80px;
+            height: 34px;
+            cursor: pointer;
+        }
+
+        /* Hide default checkbox visually while keeping it keyboard-accessible */
+        .theme-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        /* 3. Pill Track */
+        .slider {
+            position: absolute;
+            inset: 0;
+            background-color: var(--track-bg);
+            border-radius: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 7px;
+            transition: background-color 0.4s ease;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        /* 4. Sliding Circle Thumb */
+        .slider::before {
+            content: "";
+            position: absolute;
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: var(--thumb-bg);
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.4s ease;
+            z-index: 2;
+        }
+
+        /* Slide the thumb to the right when checked */
+        #theme-toggle:checked+.slider::before {
+            transform: translateX(30px);
+        }
+
+        /* Accessibility: Show focus ring when navigating with Tab key */
+        #theme-toggle:focus-visible+.slider {
+            outline: 2px solid #38bdf8;
+            outline-offset: 2px;
+        }
+
+        /* 5. Sun and Moon Icons */
+        .icon {
+            width: 18px;
+            height: 18px;
+            z-index: 1;
+            transition: transform 0.4s ease, opacity 0.4s ease;
+        }
+
+        .sun {
+            color: darkred;
+        }
+
+        .moon {
+            color: white;
+        }
+
+        .search-container {
+            position: relative;
+            width: 100%;
+            font-family: sans-serif;
+            margin-right: 5px;
+        }
+
+        #search-input {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid var(--track-bg);
+            border-radius: 10px;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+
+        #search-input::placeholder {
+            color: var(--text-color);
+            opacity: 50%;
+        }
+
+        #search-input:focus {
+            outline: none;
+        }
+
+        .suggestions-list {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+            border: 0;
+            border-radius: 10px;
+            background: var(--bg-color);
+            opacity: 100%;
+            max-height: 550px;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .suggestions-list li {
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        .item-title {
+            font-weight: bold;
+            display: block;
+            opacity: 75%
+        }
+
+        .item-meta {
+            font-size: 12px;
+        }
+
+        .star-chart-container {
+            padding: 1.5rem;
+            margin-top: 1rem;
+            overflow: hidden;
+        }
+
+        .star-chart {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            /* Prevents image stretching */
+            transform: scale(1.15);
+            /* Zooms in 1.5x from the center */
+            transform-origin: center;
+            filter: var(--filter);
+        }
+
+        h4 {
+            opacity: 75%;
+            margin-top:5px;
+            margin-bottom: 0;
+        }
+
+        p {
+            margin-top:0;
+            white-space: pre-wrap;
+        }
+
+        .panel {
+        display: none;
+        }
+        .panel.active {
+        display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <header class="title">
+        <h2>Constellations</h2>
+    </header>
+    <header class="header-bar">
+        <label class="search-container">
+            <input type="text" id="search-input" placeholder="Search by name, features or child objects"
+                autocomplete="off" />
+            <ul id="suggestions" class="suggestions-list"></ul>
+        </label>
+
+        <label class="theme-switch" aria-label="Toggle dark mode">
+            <input type="checkbox" id="theme-toggle" checked>
+            <span class="slider">
+                <!-- Sun Icon -->
+                <svg class="icon sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1" x2="12" y2="3"></line>
+                    <line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line>
+                    <line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+                <!-- Moon Icon -->
+                <svg class="icon moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+            </span>
+        </label>
+    </header>
+
+    <main>
+        <div class="star-chart-container">
+            <img id="displayImage" src="" alt="" width="100%" class="star-chart" style="display: none;">
+        </div>
+        
+<div id="1" class="panel">
+<h4>	Andromeda /an-DRAH-mih-duh/ (And), the Chained Maiden</h4>
+<p>
+Genitive: Andromedae /an-DRAH-mih-dee/
+
+Andromeda is visible only north of 40° south latitude. It lies well away from the galactic plane, so it does not contain any of the open clusters or bright nebulae of the Milky Way. Because of its distance in the sky from the band of obscuring dust, gas, and abundant stars of our home galaxy, Andromeda's borders contain many visible distant galaxies.
+
+- α Alpheratz (Sirrah) 2.1: brightest star, formerly considered to belong to both Andromeda and Pegasus, and was co-designated as δ Pegasi
+- β Mirach 2.06: fine orage type M, located in an asterism known as the girdle
+- γ Almach: lovely binary of a yellow primary of magnitude 2.3 and a blue-green secondary of magnitude 5.0, separated by 9.7 arcseconds.
+- ι, κ, λ, ο, and ψ form an asterism known as Frederick's Glory, a name derived from a former constellation Frederici Honores
+- Golf Putter asterism: 56 and other 2 stars make the putter’s head, while a line of four other suns tilting northward make up the club's shaft. Open cluster NGC 752 makes a golf ball.
+- M31 (NGC 224): Andromeda Galaxy aka the Great Spiral, close to ν, and 6 degree southeast of β. A hazy patch of mag 3.5, it is one of the most distant objects visible to the naked eye, 2.2-2.5 million ly. It is the largest neighboring galaxy to the Milky Way and the largest member of the Local Group of galaxies. Look for the dark dust lane which runs along its north-western edge
+- NGC 752 (Caldwell 28): open cluster, close to γ. Overall mag 5.7 with about 12 bright stars, and can be resolved to 90 stars mag 9.
+- NGC 7662 (Caldwell 220): Blue Snowball Nebula, in the same field with the triangle ικλ. Dim planetary nebula mag 9.2 resemble blue-green round object,
+- M110 and M32: fainter companion galaxies of M31
+
+Andromeda was one of the original 48 constellations formulated by Ptolemy in his 2nd-century Almagest, in which it was defined as a specific pattern of stars. She is typically depicted with α Andromedae as her head, ο and λ Andromedae as her chains, and δ, π, μ, Β, and γ Andromedae representing her body and legs. However, there is no universal depiction of Andromeda and the stars used to represent her body, head, and chains.
+
+Andromeda is known as "the Chained Lady" or "the Chained Woman" in English. It was known as Mulier Catenata ("chained woman") in Latin and al-Mar'at al Musalsalah in Arabic. It has also been called Persea ("Perseus's wife") or Cepheis ("Cepheus's daughter"), all names that refer to Andromeda's role in the Greco-Roman myth of Perseus, in which Cassiopeia, the queen of Ethiopia, bragged that her daughter was more beautiful than the Nereids, sea nymphs blessed with incredible beauty. Offended at her remark, the nymphs petitioned Poseidon to punish Cassiopeia for her insolence, which he did by commanding the sea monster Cetus to attack Ethiopia. Andromeda's panicked father, Cepheus, was told by the Oracle of Ammon that the only way to save his kingdom was to sacrifice his daughter to Cetus. She was chained to a rock by the sea but was saved by the hero Perseus, who in one version of the story used the head of Medusa to turn the monster into stone; in another version, by the Roman poet Ovid in his Metamorphoses, Perseus slew the monster with his diamond sword. Perseus and Andromeda then married; the myth recounts that the couple had nine children together – seven sons and two daughters – and founded Mycenae and its Persideae dynasty. After Andromeda's death Athena placed her in the sky as a constellation, to honor her. Several of the neighboring constellations (Perseus, Cassiopeia, Cetus, and Cepheus) also represent characters in the Perseus myth. It is connected with the constellation Pegasus.
+
+</p>
+</div>
+<div id="2" class="panel">
+<h3>	Antlia /ANT-lee-uh/ (Ant), the Air Pump </h3>
+<p>
+Genitive: Antliae /ANT-lee-ee/
+
+Antlia is completely visible from latitudes south of 49 degrees north. However, Antlia's stars were too faint to have been included in any ancient constellations such as the ancient constellation Argo Navis.
+Antlia contains many faint galaxies, the brightest of which is NGC 2997 at magnitude 10.6. The Antlia Cluster, also known as Abell S0636, is a cluster of galaxies located in the Hydra-Centaurus Supercluster. It is the third nearest to the Local Group after the Virgo Cluster and the Fornax Cluster, and contains around 234 galaxies in total.
+
+The French astronomer Nicolas-Louis de Lacaille first described the constellation in French as la Machine Pneumatique (the Pneumatic Machine) in 1751–52, commemorating the air pump invented by the French physicist Denis Papin. De Lacaille had observed and catalogued almost 10,000 southern stars during a two-year stay at the Cape of Good Hope, devising fourteen new constellations in uncharted regions of the Southern Celestial Hemisphere not visible from Europe. He named all but one in honour of instruments that symbolised the Age of Enlightenment. Lacaille depicted Antlia as a single-cylinder vacuum pump used in Papin's initial experiments, while German astronomer Johann Bode chose the more advanced double-cylinder version. Lacaille Latinised the name to Antlia Pneumatica on his 1763 chart. English astronomer John Herschel proposed shrinking the name to one word in 1844, noting that Lacaille himself had abbreviated his constellations thus on occasion. The International Astronomical Union adopted it as one of the 88 modern constellations in 1922.
+
+</p>
+</div>
+<div id="3" class="panel">
+<h3>	Apus /APE-us, APP-us/ (Aps), the Bird of Paradise </h3>
+<p>
+Genitive: Apodis /APP-oh-diss/
+
+In the same view with α are two much fainter stars ε and η, which show the way to δ Oct – the key to south celestial pole.
+
+Apus was one of twelve constellations created by Petrus Plancius from the observations of Pieter Dirkszoon Keyser and Frederick de Houtman who had sailed on the first Dutch trading expedition, known as the Eerste Schipvaart, to the East Indies. It first appeared on a 35-cm (14 in) diameter celestial globe published in 1598 in Amsterdam by Plancius with Jodocus Hondius. De Houtman included it in his southern star catalogue in 1603 under the Dutch name De Paradijs Voghel, "The Bird of Paradise", and Plancius called the constellation Paradysvogel Apis Indica; the first word is Dutch for "bird of paradise". Apis (Latin for "bee") is assumed to have been a typographical error for avis ("bird").
+
+After its introduction on Plancius's globe, the constellation's first known appearance in a celestial atlas was in German cartographer Johann Bayer's Uranometria of 1603. Bayer called it Apis Indica while fellow astronomers Johannes Kepler and his son-in-law Jakob Bartsch called it Apus or Avis Indica. The name Apus is derived from the Greek apous, meaning "without feet". This referred to the Western misconception that the bird-of-paradise had no feet, which arose because the only specimens available in the West had their feet and wings removed. Such specimens began to arrive in Europe in 1522, when the survivors of Ferdinand Magellan's expedition brought them home. The constellation later lost some of its tail when Nicolas-Louis de Lacaille used those stars to establish Octans in the 1750s.
+
+</p>
+</div>
+<div id="4" class="panel">
+<h3>	Aquarius /uh-QUAIR-ee-us/ (Aqr), the Water Bearer </h3>
+<p>
+Genitive: Aquarii /uh-QUAIR-ee-eye/
+
+Despite both its prominent position on the zodiac and its large size, Aquarius has no particularly bright stars, its four brightest stars being less than magnitude 2. And because of its position away from the galactic plane, the majority of deep-sky objects in Aquarius are galaxies, globular clusters, and planetary nebulae.
+
+- Group of small stars ψ<sup>1</sup> ψ<sup>2</sup> ψ<sup>3</sup> near φ and χ
+- DNA Strand asterism: 103, 104, 106, 107, 108, then 98, 99, 101, and then 86, 88, 89 form twisted helix
+- <a id="M2"></a>M2: globular cluster mag 6.5, form a right triangle with α and β
+- <a id="NGC 7293"></a>NGC 7293: Helix Nebula, southwest of σ. The closest, 650ly, and also the largest planetary nebular seen, half the size of Full Moon (16’) at mag 7
+- <a id="NGC 7009"></a>NGC 7009: Saturn Nebula, southest of μ and close to ν. Mag 8, was given its moniker by the 19th century astronomer Lord Rosse for its resemblance to the planet Saturn in a telescope: faint protrusions on either side that resemble Saturn's rings.
+- <a id="M72"></a>M72: globular cluster, faint mag 9
+- <a id="M73"></a>M73: open cluster, tiny 4-star asterism
+
+Aquarius is one of the oldest of the recognized constellations along the zodiac (the Sun's apparent path). It was one of the 48 constellations listed by the 2nd century astronomer Ptolemy, and it remains one of the 88 modern constellations. It is found in a region often called the Sea due to its profusion of constellations with watery associations such as Cetus the whale, Pisces the fish, and Eridanus the river.
+
+Aquarius is identified as The Great One in the Babylonian star catalogues and represents the god Ea himself, who is commonly depicted holding an overflowing vase. The Babylonian star-figure appears on entitlement stones and cylinder seals from the second millennium. It contained the winter solstice in the Early Bronze Age. In Old Babylonian astronomy, Ea was the ruler of the southernmost quarter of the Sun's path, the Way of Ea, corresponding to the period of 45 days on either side of winter solstice. Aquarius was also associated with the destructive floods that the Babylonians regularly experienced, and thus was negatively connoted. In Ancient Egypt astronomy, Aquarius was associated with the annual flood of the Nile; the banks were said to flood when Aquarius put his jar into the river, beginning spring.
+
+In the Greek tradition, the constellation came to be represented simply as a single vase from which a stream poured down to Piscis Austrinus. The name in the Hindu zodiac is likewise kumbha "water-pitcher".
+
+In Greek mythology, Aquarius is sometimes associated with Deucalion, the son of Prometheus who built a ship with his wife Pyrrha to survive an imminent flood. They sailed for nine days before washing ashore on Mount Parnassus. Aquarius is also sometimes identified with beautiful Ganymede, a youth in Greek mythology and the son of Trojan king Tros, who was taken to Mount Olympus by Zeus to act as cup-carrier to the gods. Neighboring Aquila represents the eagle, under Zeus' command, that snatched the young boy; some versions of the myth indicate that the eagle was in fact Zeus transformed. An alternative version of the tale recounts Ganymede's kidnapping by the goddess of the dawn, Eos, motivated by her affection for young men; Zeus then stole him from Eos and employed him as cup-bearer. Yet another figure associated with the water bearer is Cecrops I, a king of Athens who sacrificed water instead of wine to the gods.
+
+</p>
+</div>
+<div id="5" class="panel">
+<h3>	Aquila /ACK-will-uh, uh-QUILL-uh/ (Aql), the Eagle </h3>
+<p>
+Genitive: Aquilae /ACK-will-ee, uh-QUILL-ee/
+
+Large and splendid constellation with rich Milky Way region. Because of this location, many clusters and nebulae are found within its borders, but they are dim and galaxies are few.
+- α Altair: mag 0.76, is the brightest star in this constellation and one of the closest naked-eye stars to Earth at a distance of 17 ly. Its name comes from the Arabic phrase al-nasr al-tair, meaning the flying eagle.
+- NGC 6738: faint blur open cluster southwest of ζ
+- NGC 6709: oddly triangular haze of tiny pack open cluster further southwest of ζ
+
+Aquila was one of the 48 constellations described by the second-century astronomer Ptolemy. It had been earlier mentioned by Eudoxus in the fourth century BC and Aratus in the third century BC. The constellation was also known as Vultur volans (the flying vulture) to the Romans, not to be confused with Vultur cadens which was their name for Lyra. It is often held to represent the eagle which held Zeus's/Jupiter's thunderbolts in Greco-Roman mythology. Aquila is also associated with the eagle that kidnapped Ganymede, a son of one of the kings of Troy (associated with Aquarius), to Mount Olympus to serve as cup-bearer to the gods.
+
+</p>
+</div>
+<div id="6" class="panel">
+<h3>	Ara /AIR-uh, AR-uh/ (Ara), the Altar </h3>
+<p>
+Genitive: Arae /AIR-ee, AR-ee/
+
+- NGC 6193: open cluster containing approximately 30 stars with an overall magnitude of 5.0 and a size of 0.25 square degrees, about half the size of the full Moon.
+- NGC 6397: the closest globular cluster at 8200ly, close to β γ pair
+- NGC 6362: globular
+- NGC 6167: open cluster
+- Westerlund 1: a super star cluster that contains the red hypergiant Westerlund 1-26, whichiossibly the largest star known with an estimate varying between 1,530 R☉ and 2,550 R☉
+- R Ara: algol-type eclipsing binary period 4.4d, mag 5.9-6.9
+
+Ara was one of the 48 Greek constellations described by the 2nd century astronomer Ptolemy. In ancient Greek mythology, Ara was identified as the altar where the gods first made offerings and formed an alliance before defeating the Titans. One of the southernmost constellations depicted by Ptolemy, it had been recorded by Aratus in 270 BC as lying close to the horizon, and the Almagest portrays stars as far south as γ Arae. It has proposed that ancient observers must have been able to see as far south as ζ Arae to define a pattern that looked like an altar. The northwestern part of Ara contains part of the Milky Way to the south of Scorpius and thus has rich star fields.
+
+</p>
+</div>
+<div id="7" class="panel">
+<h3>	Aries /AIR-eez, AIR-ee-yeez/ (Ari), the Ram </h3>
+<p>
+Genitive: Arietis /uh-RYE-ih-tiss/
+
+Aries is a relatively dim constellation, possessing only four bright stars: Hamal (α Arietis, second magnitude), Sheratan (β Arietis, third magnitude), Mesarthim (γ Arietis, fourth magnitude), and 41 Arietis (also fourth magnitude). The few deep-sky objects within the constellation are quite faint and include several pairs of interacting galaxies.
+- γ is a lovely binary of equal components, seperation 8” requires telescope.
+- λ: binary mag 4.8 and mag 7.3 at sep 36”
+- 30: binary mag 6.5 yellowish and mag 7 bluish at sep 38”
+- 14: binary mag 5 and mag 8 at sep 108”
+
+Aries is one of the constellations of the zodiac. It is located in the northern celestial hemisphere between Pisces to the west and Taurus to the east. The name Aries is Latin for ram, and its symbol is ♈, representing a ram's horns. It is one of the 48 constellations described by the 2nd century astronomer Ptolemy. In Hellenistic astrology, the constellation of Aries is associated with the golden ram of Greek mythology that rescued Phrixus and Helle on orders from Hermes, taking Phrixus to the land of Colchis. Phrixos and Helle were the son and daughter of King Athamas and his first wife Nephele. The king's second wife, Ino, was jealous and wished to kill his children. To accomplish this, she induced a famine in Boeotia, then falsified a message from the Oracle of Delphi that said Phrixos must be sacrificed to end the famine. Athamas was about to sacrifice his son atop Mount Laphystium when Aries, sent by Nephele, arrived. Helle fell off of Aries's back in flight and drowned in the Dardanelles, also called the Hellespont in her honor. After arriving, Phrixus sacrificed the ram to Zeus and gave the Fleece to Aeëtes of Colchis, who rewarded him with an engagement to his daughter Chalciope. Aeëtes hung its skin in a sacred place where it became known as the Golden Fleece and was guarded by a dragon. In a later myth, this Golden Fleece was stolen by Jason and the Argonauts.
+
+</p>
+</div>
+<div id="8" class="panel">
+<h3>	Auriga /aw-RYE-guh/ (Aur), the Charioteer </h3>
+<p>
+Genitive: Aurigae /aw-RYE-ghee/
+
+Auriga is most prominent during winter evenings in the northern Hemisphere, along with the five other constellations that have stars in the Winter Hexagon asterism. Because of its northern declination, Auriga is only visible in its entirety as far as 34° south; for observers farther south it lies partially or fully below the horizon. And thank to its position near the winter Milky Way, Auriga has many bright open clusters in its borders.
+
+Capella (α Aur) is associated with the mythological she-goat Amalthea, who breast-fed the infant Zeus. Though most often associated with Amalthea, Capella has sometimes been associated with Amalthea's owner, a nymph. The myth of the nymph says that the goat's hideous appearance, resembling a Gorgon, was partially responsible for the Titans' defeat, because Zeus skinned the goat and wore it as his aegis. The asterism Haedi (the Kids) containing the three goats had been a separate constellation; however, Ptolemy merged the Charioteer and the Goats in the 2nd-century Almagest.
+
+- α Capela: aka the Goat Star, an unusual multiple star system among the brightest stars in the night sky mag 0.08, 47 ly away.
+- Haedi (the Kids) asterism: α, ε, ζ and η
+- Cheshire Cat asterism: named by Ben Cacace in 2002, just south of M38
+- Lacrosse Racket (Flying Minnow) asterism: six stars mag 5-6 14, 16, 17, 18, 19 and IQ in south-central Auriga.
+- False Kids (or Little Kids) asterism: ν τ υ
+- Herschel’s Telescope asterism: 8 stars ψ2 to ψ9
+- <a id="M36"></a>M36: open cluster mag 6.0
+- <a id="M37"></a>M37: open cluster, at mag 5.6 the brightest and largest in Auriga
+- <a id="M38"></a>M38: open cluster mag 6.4
+- Flaming Star Nebula (IC 405), associated with the variable star AE Aurigae
+
+Auriga was among the 48 constellations listed by the 2nd-century astronomer Ptolemy. Located north of the celestial equator. Its name is the Latin word for the Charioteer. In Greek mythology, Auriga is often identified as the mythological Greek hero Erichthonius of Athens, the chthonic son of Hephaestus who was raised by the goddess Athena. Erichthonius was generally credited to be the inventor of the quadriga, the four-horse chariot, which he used in the battle against the usurper Amphictyon, the event that made Erichthonius the king of Athens. His chariot was created in the image of the Sun's chariot, the reason Zeus placed him in the heavens. The Athenian hero then dedicated himself to Athena and, soon after, Zeus raised him into the night sky in honor of his ingenuity and heroic deeds.
+
+Auriga, however, is sometimes described as Myrtilus, who was Hermes's son and the charioteer of Oenomaus. The association of Auriga and Myrtilus is supported by depictions of the constellation, which rarely show a chariot. Myrtilus's chariot was destroyed in a race intended for suitors to win the heart of Oenomaus's daughter Hippodamia. Myrtilus earned his position in the sky when Hippodamia's successful suitor, Pelops, killed him, despite his complicity in helping Pelops win her hand. After his death, Myrtilus's father Hermes placed him in the sky. Yet another mythological association of Auriga is Theseus's son Hippolytus. He was ejected from Athens after he refused the romantic advances of his stepmother Phaedra, who committed suicide as a result. He was killed when his chariot was wrecked, but revived by Asclepius. Regardless of Auriga's specific representation, it is likely that the constellation was created by the ancient Greeks to commemorate the importance of the chariot in their society.
+
+</p>
+</div>
+<div id="9" class="panel">
+<h3>	Boötes /bo-OH-teez/ (Boo), the Herdsman </h3>
+<p>
+Genitive: Boötis /bo-OH-tiss/
+
+Boötes is in a part of the celestial sphere facing away from the plane of our home Milky Way galaxy, and so does not have open clusters or nebulae.
+- α Arcturus: mag -0.05, the brightest star north of the celestial equator, 36ly
+- ε Izar: aka Pulcherrima, is a colourful multiple star consists of yellow mag 2.5 giant and a blue-hued mag 4.6.
+- μ Alkalurops: multiple star system mag μ<sup>A</sup> 4.3 and mag 6.5 which is itself a binary μ<sup>B</sup> and μ<sup>C</sup>
+- Napoleon's Hat asterism: an arc or chain of seven stars right at the brink of visibility just 40 arc-minutes south of Arcturus.
+- NGC 5466: globular cluster mag 9, required telescope
+
+One of the 48 constellations described by the 2nd-century astronomer Ptolemy. It is home to many bright stars including the fourth-brightest star in the night sky, the orange giant Arcturus.
+
+The name Boötes was first used by Homer in his Odyssey as a celestial reference point for navigation, described as "late-setting" or "slow to set", translated as the "Plowman". Exactly whom Boötes is supposed to represent in Greek mythology is not clear. According to one version, he was a son of Demeter, Philomenus, twin brother of Plutus, a plowman who drove the oxen in the constellation Ursa Major. This is corroborated by the constellation's name, which itself means "ox-driver" or "herdsman." The ancient Greeks saw the asterism now called the "Big Dipper" or "Plough" as a cart with oxen. This influenced the name's etymology, derived from the Greek for "noisy" or "ox-driver". Another myth associated with Boötes relates that he invented the plow and was memorialized for his ingenuity as a constellation.
+
+Another myth associated with Boötes by Hyginus is that of Icarius, who was schooled as a grape farmer and winemaker by Dionysus. Icarius made wine so strong that those who drank it appeared poisoned, which caused shepherds to avenge their supposedly poisoned friends by killing Icarius. Maera, Icarius' dog, brought his daughter Erigone to her father's body, whereupon both she and the dog committed suicide. Zeus then chose to honor all three by placing them in the sky as constellations: Icarius as Boötes, Erigone as Virgo, and Maera as Canis Major or Canis Minor.
+
+Following another reading, the constellation is identified with Arcas and also referred to as Arcas and Arcturus, son of Zeus and Callisto. Arcas was brought up by his maternal grandfather Lycaon, to whom one day Zeus went and had a meal. To verify that the guest was really the king of the gods, Lycaon killed his grandson and prepared a meal made from his flesh. Zeus noticed and became very angry, transforming Lycaon into a wolf and giving life back to his son. In the meantime Callisto had been transformed into a she-bear by Zeus's wife Hera, who was angry at Zeus's infidelity. This is corroborated by the Greek name for Boötes, Arctophylax, which means "Bear Watcher".
+
+Callisto, in the form of a bear was almost killed by her son, who was out hunting. Zeus rescued her, taking her into the sky where she became Ursa Major, "the Great Bear". Arcturus, the name of the constellation's brightest star, comes from the Greek word meaning "guardian of the bear". Sometimes Arcturus is depicted as leading the hunting dogs of nearby Canes Venatici and driving the bears of Ursa Major and Ursa Minor.
+
+</p>
+</div>
+<div id="10" class="panel">
+<h3>	Caelum /SEE-lum/ (Cae), the Engraving Tool </h3>
+<p>
+Genitive: Caeli /SEE-lye/
+
+Due to its small size and location away from the plane of the Milky Way, Caelum is a rather barren constellation, with few objects of interest.
+
+A faint constellation in the southern sky, introduced in the 1750s by Nicolas Louis de Lacaille. Its name means “chisel” in Latin, and it was formerly known as Caelum Scalptorium (“the engravers’ chisel”); It is a rare word, unrelated to the far more common Latin caelum, meaning “sky, heaven, atmosphere”.
+
+</p>
+</div>
+<div id="11" class="panel">
+<h3>	Camelopardalis /cuh-MEL-oh- PAR-duh-liss/ (Cam), the Giraffe </h3>
+<p>
+Genitive: Camelopardalis /cuh-MEL-oh- PAR-duh-liss/
+
+Camelopardalis is in the part of the celestial sphere facing away from the galactic plane. Accordingly, many distant galaxies are visible within its borders.
+- Kemble's Cascade: a simple but beautiful asterism appearing in the sky as a chain of stars 2.5° long that is parallel to the Milky Way and is pointed towards Cassiopeia.
+- NGC 1502: mag 6.9 open cluster at one end of Kemble’s Cascade. About 3,000ly, it has about 45 bright members, and features a double star of magnitude 7.0 at its center.
+- Kemble’s Kite: an asterism that resembles a kite with a tail 
+- NGC 2403: spiral galaxy
+- Stock 23: open cluster near Struve 285, need dark sky
+- Collinder 464: 8.5° northeast of α Cam
+
+A large but faint constellation of the northern sky representing a giraffe. The constellation was introduced in 1612 or 1613 by Petrus Plancius. The greek word for giraffe consists of camel and leopard, due to its having a long neck like a camel and spots like a leopard.
+
+The space probe Voyager 1 is moving in the direction of this constellation, though it will not be nearing any of the stars in this constellation for many thousands of years, by which time its power source will be long dead.
+
+</p>
+</div>
+<div id="12" class="panel">
+<h3>	Cancer /CAN-ser/ (Cnc), the Crab </h3>
+<p>
+Genitive: Cancri /CANG-cry/
+
+Cancer is the second dimmest of the zodiacal constellations. Under city skies, it is invisible to the naked eye.
+- α Acubens, the claw: true binary mag 2.8 and mag 5.2 at sep 4’ , 65ly
+- X: the reddest star in the sky, next to δ
+- M44 Praesepe: aka the Bee Hive Cluster, one of the nearest and largest open clusters. It was one of the first objects Galileo observed with his telescope in 1609, spotting 40 stars in the cluster. Nine of the brightest near the center of the cluster form a distinctive V asterism that is sometimes called the Heart of the Crab.
+- M67: one of the most ancient of open clusters with many red giants of 3-4bil yo, a misty glow set between Acubens (α) and two fainter stars to its west. 500 stars but too faint to resolve by bino.
+- NGC 5897: smudge of grayish light 1.5 degree southeast of ι
+
+Cancer is one of the twelve constellations of the zodiac. Its name is Latin for crab and it is commonly represented as one. Its astrological symbol is ♋.
+
+In Greek mythology, Cancer is identified with the crab that appeared while Hercules was fighting the many-headed Hydra. The crab bit Hercules on the foot to distract him, Hercules crushed it and then the goddess Hera, a sworn enemy of Hercules, placed the crab among the stars.
+
+Cancer was the location of the Sun's most northerly position in the sky (the summer solstice) in ancient times, though this position now occurs in Taurus due to the precession of the equinoxes, around June 21. This is also the time that the Sun is directly overhead at 23.5°N, a parallel now known as the Tropic of Cancer.
+
+</p>
+</div>
+<div id="13" class="panel">
+<h3>	Canes Venatici /CANE-eez (CAN-eez) ve-NAT-iss-eye/ (CVn), the Hunting Dogs </h3>
+<p>
+Genitive: Canum Venaticorum /CANE-um (CAN-um) ve-nat-ih-COR-um/
+
+- La Superba is one of the reddest stars in the sky and one of the brightest carbon stars. 
+- M3 (NGC 5272): globular cluster mag 6.3, 48000ly (or 33900ly?), make the right angle of the dim right triangle halfway between Arcturus (α Boo) and Cor Caroli "heart of Charles" (α CVn), or close to β Com?. More than 500,000 stars
+- M51 (NGC 5194): The Whirlpool Galaxy is a spiral galaxy tilted face-on to observers on Earth, and was the first galaxy whose spiral nature was discerned. Widely considered to be one of the most beautiful galaxies visible.
+- NGC 5195: smaller companion of M51
+- M63 (NGC 5055): the Sunflower Galaxy
+- M94 (NGC 4376): mag 8.0, face-on spiral galaxy with very tight spiral amrs and bright core
+- M106 (NGC 4258):
+- NGC 4631: a barred spiral, one of the largest and brightest edge-on galaxies
+- The Giant Void, an extremely large void (part of the universe containing very few galaxies) is within the vicinity of this constellation. It may be possibly the largest void ever discovered, slightly larger than the Eridanus Supervoid and 1,200 times the volume of expected typical voids. It was discovered in 1988 in a deep-sky survey.
+
+A small northern constellation that was created by Johannes Hevelius in the 17th century. Its name is Latin for "hunting dogs", and the constellation is often depicted in illustrations as representing the dogs of Boötes the Herdsman, a neighboring constellation.
+In medieval times, the identification of these stars with the dogs of Boötes arose through a mistranslation. Some of Boötes's stars were traditionally described as representing the club. When the Greek astronomer Ptolemy's Almagest was translated from Greek to Arabic, the translator Hunayn ibn Ishaq did not know the Greek word club and rendered it as a similar-sounding Arabic word for a weapon meaning "the spearshaft having a hook". When the Arabic text was later translated into Latin, the translator Gerard of Cremona mistook hook for another word meaning dog. These spurious dogs floated about the astronomical literature until Hevelius decided to specify their presence in the sky by making them a separate constellation in 1687.
+
+</p>
+</div>
+<div id="14" class="panel">
+<h3>	Canis Major /CANE-iss (CAN-iss) MAY-jer/ (CMa), the Greater Dog </h3>
+<p>
+Genitive: Canis Majoris /CANE-iss (CAN-iss) muh-JOR-iss/
+
+Canis Major is a prominent constellation because of its many bright stars. These include Sirius, the brightest star in the night sky, as well as three other stars above magnitude 2.0. The band of the Milky Way goes through Canis Major, with only patchy obscurement by interstellar dust clouds. It is bright in the northeastern corner of the constellation, as well as in a triangular area between Adhara, Wezen and Aludra, with many stars visible in binoculars.
+- α Sirius: mag -1.46, the brightest star and one of the closest stars to Earth at a distance of 8.6 light-years. Its name comes from the Greek word for "scorching" or "searing". But it is far from being exceptionally powerful, only 26 Suns lumi.
+- δ Wezen: mag 1.9, 900ly and 82000 Suns lumi.
+- ε Adhara: mag 1.5 is the second-brightest star of the constellation and the brightest source of extreme ultraviolet radiation in the night sky. A blue-white supergiant, it used to shy at -3.99 around 4.7 million years ago.
+- τ CMa: blue super giant is one of the most luminous stars 50,000 Sun lumi, part of NGC 2362 open cluster.
+- σ CMa: red super giant, 400 Sun diameter 
+- M41 (NGC 2287): open cluster mag 4.5, around 2300ly. 
+- Collinder 121: sparse open cluster including ο<sup>1</sup> ο<sup>2</sup> and surrounding mag 6-7 stars
+- Collinder 140: 30 mag 5-9 stars 3 degrees south of η
+- Collinder 132: 14 stars 2 degree northwest of Collinder 140
+- NGC 2360: Caroline's Cluster after its discoverer Caroline Herschel. 3.5 degrees west of Muliphein, mag 7.2 from 80 stars but dim.
+- NGC 2362: small, compact open cluster. It contains about 60 stars, of which τ CMa is the brightest member.
+- NGC 2354: a fainter open cluster of magnitude 6.5, with around 15 member stars visible with binoculars, 2 degrees SW of NGC 236?
+- NGC 2359 (Thor's Helmet or the Duck Nebula): is a relatively bright emission nebula mag 10
+- NGC 2353: dim open cluster contain mag 6 star SAO 152598, belong to a region known as the Canis Major OB1 Association. Here, gas and dust, including the Seagull Nebula, is being compressed to form new stars such as SAO 152598.
+
+A constellation in the southern celestial hemisphere that was included in Ptolemy's 48 constellations. Its name is Latin for "greater dog" in contrast to Canis Minor, the "lesser dog"; both figures are commonly represented as following the constellation of Orion the hunter through the sky.
+
+In Greek Mythology, Canis Major represented the dog Laelaps, a gift from Zeus to Europa; or sometimes the hound of Procris, Diana's nymph; or the one given by Aurora to Cephalus, so famed for its speed that Zeus elevated it to the sky. It was also considered to represent one of Orion's hunting dogs, pursuing Lepus the Hare or helping Orion fight Taurus the Bull; and is referred to in this way by Aratos, Homer and Hesiod. The ancient Greeks refer only to one dog, but by Roman times, Canis Minor appears as Orion's second dog.
+
+</p>
+</div>
+<div id="15" class="panel">
+<h3>	Canis Minor /CANE-iss (CAN-iss) MY-ner/ (CMi), the Lesser Dog </h3>
+<p>
+Genitive: Canis Minoris /CANE-iss (CAN-iss) mih-NOR-iss/
+
+- α Procyon: is the seventh-brightest star in the night sky, as well as one of the closest. Its name means "before the dog" or "preceding the dog" in Greek, as it rises an hour before the "Dog Star", Sirius, of Canis Major. 11.5ly 7 Suns lumi.
+
+Canis Minor was one of the original 48 constellations formulated by Ptolemy in his second-century Almagest, in which it was defined as a specific pattern (asterism) of stars; Ptolemy identified only two stars and hence no depiction was possible. The Ancient Greeks called the constellation προκυων/Procyon, "coming before the dog", transliterated into Latin as Antecanis, Praecanis, or variations thereof, by Cicero and others. Roman writers also appended the descriptors parvus, minor or minusculus ("small" or "lesser", for its faintness), septentrionalis ("northerly", for its position in relation to Canis Major), primus (rising "first") or sinister (rising to the "left") to its name Canis. In Greek mythology, Canis Minor was sometimes connected with the Teumessian Fox, a beast turned into stone with its hunter, Laelaps, by Zeus, who placed them in heaven as Canis Major (Laelaps) and Canis Minor (Teumessian Fox). Eratosthenes accompanied the Little Dog with Orion, while Hyginus linked the constellation with Maera, a dog owned by Icarius of Athens. On discovering the latter's death, the dog and Icarius' daughter Erigone took their lives and all three were placed in the sky—Erigone as Virgo and Icarius as Boötes. As a reward for his faithfulness, the dog was placed along the "banks" of the Milky Way, which the ancients believed to be a heavenly river, where he would never suffer from thirst.
+
+</p>
+</div>
+<div id="16" class="panel">
+<h3>	Capricornus /CAP-rih-CORN-us/ (Cap), the Sea Goat </h3>
+<p>
+Genitive: Capricorni /CAP-rih-CORN-eye/
+
+The constellation asterism resembles the bottom half of a bikini.
+- δ Deneb Algedi: the brightest star in Cap with a magnitude of 2.9, 39 light-years from Earth. Like several other stars such as Denebola and Deneb, it is named for the Arabic word for "tail" (deneb); its traditional name means "the tail of the goat". Deneb Algedi is a Beta Lyrae variable star (a type of eclipsing binary). It ranges by about 0.2 magnitudes with a period of 24.5 hours.
+- α Algedi: wide double 376” of 3.6 and 4.2. Both components are themselves double but require telescope.
+- β: double
+M30 (NGC 7099): centrally-condensed globular cluster of mag 7.5 and at a distance of 30,000ly
+NGC 6907: wide spiral galaxy 
+NGC 7103: galaxy group just 1 degree north of M30
+
+One of the constellations of the zodiac. Its name is Latin for "horned goat" or "goat horn" or "having horns like a goat's", and it is commonly represented in the form of a sea-goat: a mythical creature that is half goat, half fish. Its symbol is Capricorn symbol ♑ . Until 130 BCE the December solstice took place while the sun is in the constellation Capricornus. The sun's most southerly position, which is attained at the northern hemisphere's winter solstice, is now called the Tropic of Capricorn, a term which also applies to the line on the Earth at which the sun is directly overhead at noon on that solstice.
+
+In Greek mythology, the constellation is sometimes identified as Amalthea, the goat that suckled the infant Zeus after his mother, Rhea, saved him from being devoured by his father, Cronos. The goat's broken horn was transformed into the cornucopia or horn of plenty.[8] According to some ancient Greek myths, it started with the sea-goat Pricus. he was the father of the race of sea-goats (half goats half fish), who were intelligent and honourable creatures. They lived in the sea near the shore. They could speak and think according to Greek legend. They were favoured by the gods. Pricus is tied to Chronos (Greek mythology), the god of time. Chronos created the immortal Pricus, who shares Chronos's ability to manipulate time. He had lots of children who lived near the seashore, however, when they found themselves on the dry land they turned into normal goats, losing their special ability to think and speak in the proses. In an effort to prevent this pricus turns back time, again and again, however, he eventually resigns himself to loneliness and misery, letting the little Sea Goats leave him. Learning he cannot control their fate and not wanting to be the only Sea Goat prompts him to ask Chronos to let him die. Because he is immortal instead he must spend eternity in the sky as Capricorn. Capricornus is also sometimes identified as Pan, the god with a goat's head, who saved himself from the monster Typhon by giving himself a fish's tail and diving into a river.
+
+</p>
+</div>
+<div id="17" class="panel">
+<h3>	Carina /cuh-RYE-nuh, cuh-REE-nuh/ (Car), the Keel </h3>
+<p>
+Genitive: Carinae /cuh-RYE-nee Genitive: cuh-REE-nee/
+
+Two asterisms are prominent in Carina. One is known as the 'Diamond Cross', which is larger than the Southern Cross (but fainter), and, from the perspective of the southern hemisphere viewer, upside down, the long axes of the two crosses being close to parallel. Another asterism in the constellation is the False Cross, often mistaken for the Southern Cross, which is an asterism in Crux. The False Cross consists of two stars in Carina, ι and ε, and two stars in Vela, κ Vel and δ Vel.
+
+Since the Milky Way runs through Carina, there are a large number of open clusters in the constellation, embedded in rich star fields.
+
+- α Canopus: the second brightest star in the night sky at mag −0.72, 313ly white-hued supergiant. Its traditional name comes from the mythological Canopus, who was a navigator for Menelaus, king of Sparta. At 200000 Suns lumi, it is a cosmic searchlight. It can be seen in Alexandria but not Athens, an early proof that the world is not flat
+- η Car: the most prominent variable star in Carina; with a mass of approximately 100 solar masses and 4 million times as bright as the Sun, though being dimmed by intervening nebulosity. In infra-red it is still one the strongest sources. It was first discovered to be unusual in 1677, when its magnitude suddenly rose to 4, attracting the attention of Edmond Halley. Its most prominent outburst made it the equal of Sirius; it brightened to magnitude −1.5 in 1843. In the same view with θ Car. Part of star cluster Trumpler 16 of 90 stars hidden among the clouds of NGC 3372.
+- NGC 3372: Carina Nebula, discovered by Nicolas Louis de Lacaille in 1751. Containing η Car, Mag 8 and spanding 2 degree, 300ly wide of vast star forming region with 6 open clusters. Its central region, dark mass, is called the Keyhole, or the Keyhole Nebula. One of the most amazing object in the entire sky.
+- IC 2602: Southern Pleiades, large open cluster containing θ Car. Can be found by extend twice the line from ε Cru to λ Cen.
+- NGC 3532: open cluster 150 stars like an ellipse with a dark central area and superimposed by χ Car
+- NGC 2516: Southern Beehive, C96, 100 stars 1300ly
+- NGC 3114: open cluster mag 6, 170 stars
+- NGC 32193: open cluster of 90 tighly packed stars mag 6-13
+- NGC 2808: naked eye globular cluster
+- ε and υ: double stars in small telescope
+
+Carina was once a part of Argo Navis, the great ship of Jason and the Argonauts who searched for the Golden Fleece. The constellation of Argo was introduced in ancient Greece. However, due to the massive size of Argo Navis and the sheer number of stars that required separate designation, Nicolas Louis de Lacaille divided Argo into three sections in 1763: Carina (the keel), Puppis (the poop deck), and Vela (the sails of the ship). In the 19th century, these three became established as separate constellations, and were formally included in the list of 88 modern IAU constellations in 1930.Lacaille kept a single set of Greek letters for the whole of Argo, and separate sets of Latin letter designations for each of the three sections. Therefore, Carina has the α, β and ε, Vela has γ and δ, Puppis has ζ, and so on.
+
+</p>
+</div>
+<div id="18" class="panel">
+<h3>	Cassiopeia /CASS-ee-uh-PEE-uh/ (Cas), the Seated Queen </h3>
+<p>
+Genitive: Cassiopeiae /CASS-ee-uh-PEE-ye/
+
+A rich section of the Milky Way runs through Cassiopeia, stretching from Perseus towards Cygnus, and it contains a number of open clusters, young luminous galactic disc stars, and nebulae.
+- STT 254: binary red-oragnge var mag 7.4-10 and blue mag 8
+- M52 (NGC 7654): open cluster, 200 stars 5200ly blended into a little cloud of misty starlight.
+- M103 (NGC 581): open cluster, 25 stars
+- NGC 457 (Caldwell 13): E.T. Cluser, or the Owl Cluster open cluster mag 6.4, 100 stars including φ
+- NGC 663: open cluster mag 7, faint fuzz in bino, 80 stars
+- Stock 2: open cluster 50 stars that form an X-shaped pattern or a headless stickman figure, about 2° north of the Double Cluster in Perseus
+- Stock 5: 52, 53 Cas, and 20 fainter stars
+- Collinder 463: open cluster inside a keystone asterism of four stars 40, 42, 48, and 50 Cas
+- Melotte 15: open cluster east of Cassiopeia W
+
+One of the 48 constellations listed by the 2nd-century Greek astronomer Ptolemy, it is easily recognizable due to its distinctive 'W' shape, formed by five bright stars. It is opposite Ursa Major.
+
+Cassiopeia was the wife of King Cepheus of Aethiopia and mother of Princess Andromeda. Cepheus and Cassiopeia were placed next to each other among the stars, along with Andromeda. She was placed in the sky as a punishment after enraging Poseidon with the boast that her daughter Andromeda was more beautiful than the Nereids or, alternatively, that she herself was more beautiful than the sea nymphs. She was forced to wheel around the North Celestial Pole on her throne, spending half of her time clinging to it so she does not fall off, and Poseidon decreed that Andromeda should be bound to a rock as prey for the monster Cetus. Andromeda was then rescued by the hero Perseus, whom she later married.
+
+</p>
+</div>
+<div id="19" class="panel">
+<h3>	Centaurus /sɛnˈtɔːrəs/ (Cen), the Centaur </h3>
+<p>
+Genitive: Centauri /sɛnˈtɔːraɪ/
+
+If a line is constructed perpendicularly between α and β Cen, this intersection between this line and another line from Gacrux to Acrux marks the Southern Celestial Pole. The two stars α and β are often referred to as the "Southern Pointers" or just "The Pointers", allowing people to easily find Crux the Southern Cross.
+
+- α Rigil Kentaurus: aka Toliman meaning "foot of the centaur", is a triple star system that contains Proxima Centauri, the nearest star to the Sun. The system has an overall magnitude of -0.28 and is 4.4 light-years from Earth. The primary and secondary are both yellow-hued stars; the primary, is of magnitude -0.01 and the secondary is of magnitude 1.35. Proxima, the tertiary star, is a red dwarf of magnitude 11.0; it is almost 2 degrees away from the primary and secondary and has a period of approximately one million years.
+- ω Cen (NGC 5139): despite being listed as the constellation's ω star, is in fact a naked-eye globular cluster, located at a distance of 17,000 light-years with a diameter of 150 light-years. It is the largest and brightest globular cluster in the Milky Way; at ten times the size of the next-largest cluster, it has a magnitude of 3.7. It is also the most luminous globular cluster in the Milky Way, at over one million solar luminosities from several million stars.
+- NGC 3766: open cluster, 100 stars
+- NGC 5460: open cluster, mag 6, 40 stars
+- NGC 4945: spiral galaxy edge-on, shaped like a candle flame
+- NGC 5128: Centaurus A Galaxy, one of the closest active with supermassive black hole at its core, fairly large elliptical galaxy at mag 7, 11mil ly. Its supermassive black hole is consuming a smaller spiral galaxy.
+
+One of the largest constellations, Centaurus was included among the 48 constellations listed by the 2nd-century astronomer Ptolemy.
+
+According to the Roman poet Ovid (Fasti v.379), the constellation honors the centaur Chiron, who was tutor to many of the earlier Greek heroes including Heracles (Hercules), Theseus, and Jason, the leader of the Argonauts. It is not to be confused with the more warlike centaur represented by the zodiacal constellation Sagittarius. The legend associated with Chiron says that he was accidentally poisoned with an arrow shot by Hercules, and was subsequently placed in the heavens.
+
+</p>
+</div>
+<div id="20" class="panel">
+<h3>	Cepheus /ˈsiːfiəs/ (Cep), the King </h3>
+<p>
+Genitive: Cephei /ˈsiːfiaɪ/
+
+- δ: the prototype of an important class of pulsating variable star known as a Cepheid variable. Its mag varies varies between 3.5 and 4.4 over a period of 5 days and 9 hours.
+- μ Herschel's Garnet Star: named due to its deep red colour. A variable red hypergiant mag 3.4-5.1,is one of  the largest stars known with an estimated radius over 1,000 times that of the sun, and were it placed in the Sun's position it would reach between the orbit of Jupiter and Saturn. Visually it is 100,000 times brighter than the Sun.
+- NGC 188: open cluster that has the distinction of being the closest open cluster to the north celestial pole, as well as one of the oldest-known open clusters.
+- Quasar 6C B0014+8120: one of the most powerful objects in the universe, hyperluminous powered by a ultramassive black hole equivalent to 40 billion Suns, about 10,000 times more massive than the central black hole of the Milky Way, making this among the most massive black holes currently known.
+
+One of the 48 ancient Greek constallations. Cepheus was the King of Aethiopia. He was married to Cassiopeia and was the father of Andromeda, both of whom are immortalized as modern day constellations along with Cepheus.
+
+</p>
+</div>
+<div id="21" class="panel">
+<h3>	Cetus /SEE-tus/ (Cet), the Sea Monster </h3>
+<p>
+Genitive: Ceti /SEE-tie/
+
+Although Cetus is not generally considered part of the zodiac, the ecliptic passes less than a quarter of a degree from its constellation boundary, and thus the moon, planets, and even part of the sun may be in Cetus for brief periods of time. This is all the more true of asteroids, since their orbits usually have a greater inclination to the ecliptic than the moon and planets. Cetus lies far from the galactic plane, so that many distant galaxies are visible, unobscured by dust from the Milky Way.
+
+- ο Mira: the Wonderful/Amazing, the first variable star to be discovered and the prototype of its class. Over a period of 332 days it reaches a maximum apparent magnitude of 3 - visible to the naked eye - and dips to a minimum magnitude of 10, invisible to the unaided eye. Mira pulsates with a minimum size of 400 solar diameters and a maximum size of 500 solar diameters.
+- α Menkar: "the nose", a wide double star mag 2.5, 220ly with a red-hued giant
+- β Deneb Kaitos: "the whale's tail" or Diphda, is the brightest star in Cetus. It is an orange-hued giant star of magnitude 2.0, 96ly
+- Northern Harpoon asterism: 8 stars mag 6-7 just across border with Aries
+- Southern Harpoon asterism: ν and other five mag 5-7
+- ξ and 64 asterism: 2 main stars and a string of fainters make a fuzzy patch
+- <a id="M77"></a>M77 (NGC 1068): face-on spiral galaxy mag 9, also a Seyfert / radio galaxy, form a right triangle with δ and 84
+- <a id="NGC 246"></a><a id="Caldwell 56"></a>NGC 246 (Caldwell 56): aka Cetus Ring or Pac-Man Nebula, planetary nebula mag 8
+
+Its name refers to Cetus, a sea monster in Greek mythology, although it is often called 'the whale' today. Cetus is located in the Sea region of the sky that contains other water-related constellations such as Aquarius, Pisces, and Eridanus. 
+
+Cetus may have originally been associated with a whale, which would have had mythic status amongst Mesopotamian cultures. It is often now called the Whale, though it is most strongly associated with Cetus the sea-monster, who was slain by Perseus as he saved the princess Andromeda from Poseidon's wrath.
+
+</p>
+</div>
+<div id="22" class="panel">
+<h3>	Chamaeleon /cuh-MEAL-yun, cuh-MEAL-ee-un/ (Cha) the Chameleon</h3>
+<p>
+Genitive: Chamaeleontis /cuh-MEAL-ee-ON-tiss/
+
+There are four bright stars in Chamaeleon that form a compact diamond-shape approximately 10 degrees from the South Celestial Pole and about 15 degrees south of Acrux, along the axis formed by Acrux and γ Crucis.
+
+One of twelve constellations created by Petrus Plancius from the observations of Pieter Dirkszoon Keyser and Frederick de Houtman, first appeared on a 35-cm diameter celestial globe published in 1597 in Amsterdam by Plancius and Jodocus Hondius.
+
+</p>
+</div>
+<div id="23" class="panel">
+<h3>	Circinus /SER-sin-us/ (Cir), the Compass </h3>
+<p>
+Genitive: Circini /SER-sin-eye/
+
+The Milky Way runs through the constellation.
+- <a id="NGC 5823"></a><a id="Caldwell 88"></a>NGC 5823 (Caldwell 88): open cluster of 80-100 stars, mag 7.9 3500ly, appears like a reversed S
+
+A small, faint constellation in the southern sky, first defined in 1756 by the French astronomer Nicolas-Louis de Lacaille. Its name is Latin for compass, referring to the drafting tool used for drawing circles (it should not be confused with Pyxis, a constellation that represents a mariner's compass which points north).
+
+</p>
+</div>
+<div id="24" class="panel">
+<h3>	Columba /cuh-LUM-buh/ (Col), the Dove </h3>
+<p>
+Genitive: Columbae /cuh-LUM-bee/
+
+- NGC 1851: globular cluster mag 7
+
+A small, faint constellation first listed as Columba Nohae (Noah’s Dove, referring to the dove that gave Noah the information that the Great Flood was receding) by Petrus Plancius in 1592. Recent researches suggested that Columba may also represent the dove released by Jason and the Argonauts at the Black Sea's mouth and helped them navigate the dangerous Symplegades. That explained Columba’s location near the ancient Argo Navis, though Ptolemy omitted it.
+
+</p>
+</div>
+<div id="25" class="panel">
+<h3>	Coma Berenices /COE-muh BER-uh-NICE-eez/ (Com), the Bernice's Hair </h3>
+<p>
+Genitive: Comae Berenices /COE-mee BER-uh-NICE-eez/
+
+Despite its small size, Coma Berenices contains the North Galactic Pole and one of the richest known galaxy superclusters, two galatic clusters, one star clusters and eight Messier objecs.
+
+- Melotte 111 (Collinder 256): Coma Berenices Star Cluster represents Berenice's sacrificed tresses and as a naked eye object has been known since antiquity, appearing in Ptolemy's Almagest. A large, diffuse open cluster of about 80 stars 228ly, 400mil yo, resembling letter λ or γ
+- 17 Com:  binary white and white sep 2’ 
+- NGC5053: globular cluster just 1 degree away of M53
+- NGC4147: globular cluster, smaller dimmer
+- M53 (NGC 5024): globular cluster mag 7.7 56000ly, hazy disk less than 1 degree northeast of α
+- M64 (NGC 4826): Black Eye Galaxy, Sleeping Beauty or Evil Eye galaxy, mag 9.4, 24mil ly, oval patch of light northeast of 35
+- Virgo Cluster: northern portion of the Virgo Cluster (also known as the Coma–Virgo Cluster), about 60 million light-years away. The portion includes six Messier galaxies as follow.
+    - M85 (NGC 4382): elliptical galaxy mag 9
+    - M88 (NGC 4501): spiral galaxy 30° from edge-on, well-developed symmetrical arms and supermassive black hole in its center, mag 10.4
+    - M91 (NGC 4548): barred spiral galaxy mag 10.2
+    - M98 (NGC 4192): bright edge-on spiral galaxy mag 10.1
+    - M99 (NGC 4254): face-on spiral galaxy mag 9.9
+    - M100 (NGC 4321): face-on spiral galaxy mag 9.3
+- NGC 4565: edge-on sprial galaxy mag 10
+- Coma Supercluster (Abell 1656): one of richest known galaxy clusters with at least 10,000 galaxies
+
+An ancient asterism in the northern sky which has been defined as one of the 88 modern constellations. It is located in the fourth galactic quadrant, between Leo and Boötes, and is visible in both hemispheres. Its name means "Berenice's Hair" in Latin and refers to Queen Berenice II of Egypt, who sacrificed her long hair as a votive offering if her husband the Egyptian ruler Ptolemy III Euergetes returned safely from battle during the Third Syrian War. It was introduced to Western astronomy during the third century BC by Conon of Samos, the court astronomer of Ptolemy III, and was further corroborated as a constellation by Gerardus Mercator and Tycho Brahe. Coma Berenices is the only modern constellation named for an historic figure.
+
+</p>
+</div>
+<div id="26" class="panel">
+<h3>	Corona Australis /cuh-ROE-nuh aw-STRAL-iss/ (CrA), the Southern Crown </h3>
+<p>
+Genitive: Coronae Australis /cuh-ROE-nee aw-STRAL-iss/
+
+Although fainter than its northern counterpart, the oval- or horseshoe-shaped pattern of its brighter stars renders it distinctive.
+- NGC 6541: globular cluster
+- NGC 6729: reflection nebula in the same region with group of mag 6-8 stars just west of γ
+
+One of the 48 ancient Greek constellation in the Southern Celestial Hemishere. Its Latin name means southern crown, and it is the southern counterpart of Corona Borealis, the northern crown.
+
+The Ancient Greeks saw Corona Australis as a wreath rather than a crown and associated it with Sagittarius or Centaurus.
+
+</p>
+</div>
+<div id="27" class="panel">
+<h3>	Corona Borealis /cuh-ROE-nuh bor-ee-AL-iss3/ (CrB), the Northern Crown </h3>
+<p>
+Genitive: cuh-ROE-nee bor-ee-AL-iss/
+
+- R Cor Bor: "reverse nova", most unusual variable star, mag 6 down to mag 13, 14 in a matter of ten days to two weeks absolutely at random. Objects like R Coronae Borealis prove that our universe is dynamic, violent, and changeable.  And the greatest part of that is you only need a modest pair of binoculars to see our active universe at work right from your own backyard.
+
+One of the 48 ancient Greek constellations. Its brightest stars form a semicircular arc. Its Latin name, inspired by its shape, means "northern crown". In Greek mythology, Corona Borealis was linked to the legend of Theseus and the minotaur. It was generally considered to represent a crown given by Dionysus to Ariadne, the daughter of Minos of Crete, after she had been abandoned by the Athenian prince Theseus. When she wore the crown at her marriage to Dionysus, he placed it in the heavens to commemorate their wedding. An alternate version has the besotted Dionysus give the crown to Ariadne, who in turn gives it to Theseus after he arrives in Crete to kill the minotaur that the Cretans have demanded tribute from Athens to feed. The hero uses the crown's light to escape the labyrinth after disposing of the creature, and Dionysus later sets it in the heavens. The Latin author Hyginus linked it to a crown or wreath worn by Bacchus (Dionysus) to disguise his appearance when first approaching Mount Olympus and revealing himself to the gods, having been previously hidden as yet another child of Jupiter's trysts with a mortal, in this case Semele.
+
+</p>
+</div>
+<div id="28" class="panel">
+<h3>	Corvus /COR-vus/ (Crv), the Crow </h3>
+<p>
+Genitive: Corvi /COR-vye/
+
+The four brightest stars, γ δ ε and β form a distinctive quadrilateral in the night sky aka Spica’s Spanker or the Sail.
+
+One of the 48 ancient Greek constellations, Corvus is associated with the myth of Apollo and his lover Coronis the Lapith. Coronis had been unfaithful to Apollo; when he learned this information from a pure white crow, he turned its feathers black in a fit of rage. Another legend associated with Corvus is that a crow stopped on his way to fetch water for Apollo, to eat figs. Instead of telling the truth to Apollo, he lied and said that a snake, Hydra, kept him from the water, while holding a snake in his talons as proof. Apollo, realizing this was a lie, flung the crow (Corvus), cup (Crater), and snake (Hydra) into the sky. He further punished the wayward bird by ensuring it would forever be thirsty, both in real life and in the heavens, where the Cup is just out of reach.
+
+</p>
+</div>
+<div id="29" class="panel">
+<h3>	Crater /CRAY-ter/ (Crt), the Cup </h3>
+<p>
+Genitive: Crateris /cruh-TEE-riss/
+
+One of the 48 ancient Greek constellation, it depicts a cup that has been associated with the god Apollo and is perched on the back of Hydra the water snake.  A crow or raven serves Apollo, and is sent to fetch water, but it rests lazily on the journey, and after finally obtaining the water in a cup, takes back a water snake as an excuse. According to the myth, Apollo saw through the fraud, and angrily cast the crow, cup, and snake, into the sky.
+</p>
+</div>
+<div id="30" class="panel">
+<h3>	Crux /CRUCKS, CROOKS/ (Cru), the Southern Cross</h3>
+<p>
+Genitive: Crucis /CROO-siss/
+
+In the Southern Hemisphere, the Southern Cross is frequently used for navigation in much the same way that Polaris is used in the Northern Hemisphere. Alpha and Gamma (known as Acrux and Gacrux, respectively) are commonly used to mark south. Tracing a line from Gacrux to Acrux leads to a point close to the Southern Celestial Pole. Alternatively, if a line is constructed perpendicularly between Alpha Centauri and Beta Centauri, the point where the above-mentioned line and this line intersect marks the Southern Celestial Pole. Another way to find south, strike line through Gacrux and Acrux, 4 1/2 times the distance between Gacrux and Acrux, directly below that point is south. The two stars of Alpha and Beta Centauri are often referred to as the "Southern Pointers" or just "The Pointers", allowing people to easily find the asterism of the Southern Cross or the constellation of Crux. Very few bright stars of importance lie between Crux and the pole itself, although the constellation Musca is fairly easily recognised immediately beneath Crux. A technique used in the field is to clench one's right fist and to view the cross, aligning the first knuckle with the axis of the cross. The tip of the thumb will indicate South Pole.
+
+- α Acrux: a triple star 321 light-years from Earth. Blue-tinged and magnitude 0.8 to the unaided eye, it has two close components of magnitude 1.3 and 1.8, as well as a wide component of magnitude 5. The two close components are resolved in a small amateur telescope and the wide component is readily visible in a pair of binoculars.
+- β Mimosa: a blue-hued giant mag 1.3, 353ly.
+- The Coalsack Nebula: the most prominent dark nebula in the skies, easily visible to the naked eye as a prominent dark patch in the southern Milky Way. It is large, five degrees by seven degrees, and is 600 light-years from Earth.
+- NGC 4755: the Jewel Box or Crucis Cluster, open cluster mag 4.2 more than 100 stars appears to have the shape of a letter A
+
+A constellation located in the southern sky in a bright portion of the Milky Way. It is among the most easily distinguished constellations, as all of its four main stars have an apparent visual magnitude brighter than +2.8, even though it is the smallest of all 88 modern constellations. Its name is Latin for cross, and it is dominated by a cross-shaped or kite-like asterism that is commonly known as the Southern Cross.
+
+In tropical regions Crux can be seen in the sky from April to June. Crux is exactly opposite to Cassiopeia on the celestial sphere, and therefore it cannot appear in the sky with the latter at the same time. For locations south of 34°S, Crux is circumpolar and thus always visible in the night sky.
+
+</p>
+</div>
+<div id="31" class="panel">
+<h3>	Cygnus /SIG- SIG-nu/ (Cyg), the Swan </h3>
+<p>
+Genitive: Cygni /SIG-nye/
+
+Normally, Cygnus is depicted with δ and ε Cygni as its wings, Deneb as its tail, and Albireo as the tip of its beak.
+
+- α Deneb: meaning tail, white supergiant mag 1.2, one of the largest and most luminous A-class stars known.
+- β Albireo: celebrated binary star among amateur astronomers for its contrasting hues in telescope. The primary is an orange-hued giant star of mag 3.1 and the secondary is a blue-green hued star of mag 5.1 and 380ly.
+- ο: optical binary of mag 4 orange and mag 7, plus nearby mag 5 blue-white 30 Cyg.
+- 61: binary mag 5.2 and mag 6.1 11.4ly, significant because Friedrich Wilhelm Bessel determined its parallax in 1838, the first star to have a known parallax.
+- Amber Heart asterism: γ Sadr is surrounded by a heart-shaped halo of dim stars
+- X-1: near η, bright X-ray source thought to be caused by a black hole accreting matter in a binary star system. This was the first x-ray source widely believed to be a black hole.
+- M29: small open cluster
+- M39 (NGC 7092): an open cluster 950 light-years from Earth that is visible to the unaided eye under dark skies. It is loose, with about 30 stars arranged over a wide area; their conformation appears triangular.
+- NGC 7000: the North America Nebula, visible to the unaided eye under dark skies as a bright patch in the Milky Way. A large expanse of glowing hydrogen gas mixed with opaque clouds of cosmic dust, 1 degree west of ξ and spans an area nearly 2° in diameter. Need very dark sky.
+- NGC 6910: the Rocking Horse Cluster, possessing 16 stars with a diameter of 5 arcminutes visible in a small amateur instrument mag 7.4
+- NGC 6910: small and subtle open cluster
+- NGC 6819: small open cluster
+- Ruprecht 173: open cluster
+- NGC 7063: small open cluster
+
+One of the most recognizable constellations of the northern summer and autumn, and it features a prominent asterism known as the Northern Cross. Its brightest star Deneb is one of the brightest stars in the night sky and one corner of the Summer Triangle, as well as some notable X-ray sources and the giant stellar association of Cygnus OB2. Cygnus was among the 48 ancient Greek constellations.
+
+In Greek mythology, Cygnus has been identified with several different legendary swans. Zeus disguised himself as a swan to seduce Leda, Spartan king Tyndareus's wife, who gave birth to the Gemini, Helen of Troy, and Clytemnestra; Orpheus was transformed into a swan after his murder, and was said to have been placed in the sky next to his lyre (Lyra); and the King Cygnus was transformed into a swan.
+
+The Greeks also associated this constellation with the tragic story of Phaethon, the son of Helios the sun god, who demanded to ride his father's sun chariot for a day. Phaethon, however, was unable to control the reins, forcing Zeus to destroy the chariot (and Phaethon) with a thunderbolt, causing it to plummet to the earth into the river Eridanus. According to the myth, Phaethon's brother, Cycnus, grieved bitterly and spent many days diving into the river to collect Phaethon's bones to give him a proper burial. The gods were so touched by Cycnus's devotion to his brother that they turned him into a swan and placed him among the stars.
+
+In Ovid's Metamorphoses, there are three people named Cygnus, all of whom are transformed into swans. Alongside Cycnus, noted above, he mentions a boy from Tempe who commits suicide when Phyllius refuses to give him a tamed bull that he demands, but is transformed into a swan and flies away. He also mentions a son of Neptune who is an invulnerable warrior in the Trojan War who is eventually defeated by Achilles, but Neptune saves him by transforming him into a swan.
+
+Together with other avian constellations near the summer solstice, Vultur cadens and Aquila, Cygnus may be a significant part of the origin of the myth of the Stymphalian Birds, one of The Twelve Labours of Hercules.
+
+</p>
+</div>
+<div id="32" class="panel">
+<h3>	Delphinus /del-FINE-us, del-FIN-us/ (Del), the Dolphin </h3>
+<p>
+Genitive: Delphini /del-FINE-eye Genitive: del-FIN-eye/
+
+Small enough that even if light pollution extinguishes the gentle light coming from its five main stars, they can be squeezed into the field of most common 10x binoculars.  From tip to tip, our dolphin spans a little less than 6°. The four stars α β γ δ that form the Dolphin's diamond-shaped body are also collectively referred to as Job's Coffin.
+- γ Delphini: a celebrated binary star among amateur astronomers. The primary is orange-gold of magnitude 4.3; the secondary is a light yellow, also described as green, star of magnitude 5.1 and 10 arcseconds away. The pair form a true binary with an estimated orbital period of over 3,000 years, 125ly. Require telescope.
+- Asterism of two dozen stars surrounding θ, south of β
+- NGC 6934: globular cluster mag 9, 4° south of ε
+
+One of the 48 ancient Greek constellations. Despite lacking stars above mag 4, Delphinus' brightest stars form a distinctive asterism that can easily be recognized.
+
+According to the first Greek god Poseidon wanted to marry Amphitrite, a beautiful nereid. However, wanting to protect her virginity, she fled to the Atlas mountains. Her suitor then sent out several searchers, among them a certain Delphinus. Delphinus accidentally stumbled upon her and was able to persuade Amphitrite to accept Poseidon's wooing. Out of gratitude the god placed the image of a dolphin among the stars.
+
+The second story tells of the Greek poet Arion of Lesbos (7th century BC), who was saved by a dolphin. He was a court musician at the palace of Periander, ruler of Corinth. Arion had amassed a fortune during his travels to Sicily and Italy. On his way home from Tarentum his wealth caused the crew of his ship to conspire against him. Threatened with death, Arion asked to be granted a last wish which the crew granted: he wanted to sing a dirge. This he did, and while doing so, flung himself into the sea. There, he was rescued by a dolphin which had been charmed by Arion's music. The dolphin carried Arion to the coast of Greece and left.
+
+</p>
+</div>
+<div id="33" class="panel">
+<h3>	Dorado /duh-RAH-do/ (Dor), the Swordfish </h3>
+<p>
+Genitive: Doradus /duh-RAH-dus/
+
+Dorado is rich in deep sky objects and contains most of the Large Magellanic Cloud, the remainder being in the constellation Mensa. The South Ecliptic pole, Polus Doradinalis, also lies within this constellation near the fish’s head. 
+- LMC The Large Magellanic Cloud: 25,000 light-years in diameter, is a satellite galaxy of the Milky Way Galaxy, located at a distance of 179,000 light-years. It has been deformed by its gravitational interactions with the larger Milky Way.
+- Tarantula Nebula is in the Large Magellanic Cloud, named for its spiderlike shape. It is also designated 30 Doradus, as it is visible to the naked eye as a slightly out-of-focus star. Larger than any nebula in the Milky Way at 1000 light-years in diameter, it is also brighter, because it is illuminated by the open star cluster NGC 2070, which has at its center the star cluster R136. The illuminating stars are supergiants.
+- NGC 1566 is an intermediate spiral galaxy.
+- NGC 1566 (RA 04h 20m 00s Dec -56° 56.3′) is a face-on spiral galaxy. It gives its name to the NGC 1566 Group of galaxies.
+- NGC 1755 (RA 04h 55m 13s Dec -68° 12.2′) is a globular cluster.
+- NGC 1763 (RA 04h 56m 49s Dec -68° 24.5′) is a bright nebula associated with three type B stars.
+- NGC 1820 (RA 05h 04m 02s Dec -67° 15.9′) is an open cluster.
+- NGC 1850 (RA 05h 08m 44s Dec -68° 45.7′) is a globular cluster.
+- NGC 1854 (RA 05h 09m 19s Dec -68° 50.8′) is a globular cluster.
+- NGC 1869 (RA 05h 13m 56s Dec -67° 22.8′) is an open cluster.
+- NGC 1901 (RA 05h 18m 15s Dec -68° 26.2′) is an open cluster.
+- NGC 1910 (RA 05h 18m 43s Dec -69° 13.9′) is an open cluster.
+- NGC 1936 (RA 05h 22m 14s Dec -67° 58.7′) is a bright nebula and is one of four NGC objects in close proximity, the others being NGC 1929, NGC 1934 and NGC 1935.
+- NGC 1978 (RA 05h 28m 36s Dec -66° 14.0′) is an open cluster.
+- NGC 2002 (RA 05h 30m 17s Dec -66° 53.1′) is an open cluster.
+- NGC 2027 (RA 05h 35m 00s Dec -66° 55.0′) is an open cluster.
+- NGC 2032 (RA 05h 35m 21s Dec -67° 34.1′; also known as "Seagull Nebula") is a nebula complex that contains four NGC designations: NGC 2029, NGC 2032, NGC 2035 and NGC 2040.
+- NGC 2164 (RA 05h 58m 53s Dec -68° 30.9′) is a globular cluster.
+
+One of twelve constellations named by Petrus Plancius from the observations of Pieter Dirkszoon Keyser and Frederick de Houtman in 1592. Its name refers to the dolphinfish (Coryphaena hippurus), which is known as dorado in Portuguese.
+
+</p>
+</div>
+<div id="34" class="panel">
+<h3>	Draco /DRAY-co/ (Dra), the Dragon </h3>
+<p>
+Genitive: Draconis /druh-CONE-iss/
+
+Draco, in which the North Ecliptic Pole lies, is circumpolar and can be seen all year from northern latitudes.
+
+- α Thuban: mag 3.7, meaning head of the serpent, was the northern pole star from 3942 BC, when it moved farther north than Theta Boötis, until 1793 BC. The Egyptian Pyramids were designed to have one side facing north, with an entrance passage geometrically aligned so that Thuban would be visible at night.
+- ν: a binary star with two white components of mag 4.9 each, 100ly
+- NGC 6543 Cat's Eye Nebula: a planetary nebula approximately 3,000ly, mag 9 discovered by English astronomer William Herschel in 1786, appears as a fuzzy blue-green disk in an amateur telescope.
+
+One of the 48 ancient Greek constellations in the far northern sky.
+
+Dragons in Greek mythology that may have inspired the constellation's name include Ladon, the dragon who guarded the golden apples of the Hesperides. Heracles killed Ladon during his 12 labours; he was tasked with stealing the golden apples. The constellation of Hercules is depicted near Draco.
+
+In Greco- Roman legend, Draco was a dragon killed by the goddess Minerva and tossed into the sky upon his defeat. The dragon was one of the Gigantes, who battled the Olympic gods for ten years. As Minerva threw the dragon, it became twisted on itself and froze at the cold North Celestial Pole before it could right itself.
+
+Sometimes, Draco is represented as the Titan son of Gaia, Typhon.
+
+</p>
+</div>
+<div id="35" class="panel">
+<h3>	Equuleus /eh-QUOO-lee-us/ (Equ), the Little Horse </h3>
+<p>
+Genitive: Equulei /eh-QUOO-lee-eye/
+
+Due to its small size and its distance from the plane of the Milky Way, Equuleus contains no notable deep sky objects.
+- γ: optical double star white and white sep 6’
+One of the 48 ancient Greek constellations, it is the second smallest of the modern constellations (after Crux), and also very faint, having no stars brighter than the fourth magnitude.
+
+In Greek mythology, one myth associates Equuleus with the foal Celeris (meaning "swiftness" or "speed"), who was the offspring or brother of the winged horse Pegasus. Celeris was given to Castor by Mercury. Other myths say that Equuleus is the horse struck from Poseidon's trident, during the contest between him and Athena when deciding which would be the superior. Because this section of stars rises before Pegasus, it is often called Equus Primus, or the First Horse. Equuleus is also linked to the story of Philyra and Saturn.
+
+</p>
+</div>
+<div id="36" class="panel">
+<h3>	Eridanus /ih-RID-un-us/ (Eri), the River </h3>
+<p>
+Genitive: Eridani /ih-RID-un-eye/
+
+- α Achernar, meaning the river’s end, mag 0.5 at the south end of the constellation. 144ly, Achernar is a very peculiar star because it is one of the flattest stars known. Observations indicate that its radius is about 50% larger at the equator than at the poles. This distortion occurs because the star is spinning extremely rapidly.
+- NGC 1291: barred spiral galaxy, a soft and slightly oval glow punctuated by a brighter core at 4° southeast of θ
+
+One of the 48 ancient Greek constellations.
+
+Eridanus is connected to the myth of Phaethon, who took over the reins of his father Helios' sky chariot (i.e., the Sun), but didn't have the strength to control it and so veered wildly in different directions, scorching both Earth and heaven. Zeus intervened by striking Phaethon dead with a thunderbolt and casting him to Earth. The constellation was supposed to be the path Phaethon drove along; in later times, it was considered a path of souls. Since Eridanos was also a Greek name for the Po (Latin Padus), in which the burning body of Phaethon is said by Ovid to have extinguished, the mythic geography of the celestial and earthly Eridanus is complex.
+    
+Another association with Eridanus is a series of rivers all around the world. First conflated with the Nile River in Egypt, the constellation was also identified with the Po River in Italy. The stars of the modern constellation Fornax were formerly a part of Eridanus.
+
+</p>
+</div>
+<div id="37" class="panel">
+<h3>	Fornax /FOR-naks/ (For), the Furnace </h3>
+<p>
+Genitive: Fornacis /for-NAY-siss/
+
+Being faint with no star brighter than mag 4. Fornax has been the target of investigations into the furthest reaches of the universe. The Hubble Ultra Deep Field is located within Fornax, and the Fornax Cluster, a small cluster of galaxies, lies primarily within Fornax.
+- Asterism: χ1 χ2 and χ3 and few other fainter stars 
+- NGC 1316: glaxy mag 10, subtle glow, slightly oval just 1.5° southwest of χ1 
+- NGC 1360: Robin’s Egg Nebula, faint, grayish elliptical disk of light
+- NGC 1365: barred spiral galaxy mag 10, a deg east of χ triangle.
+
+The French astronomer Nicolas Louis de Lacaille first described the constellation in French as le Fourneau Chymique (the Chemical Furnace) with an alembic and receiver in his early catalogue, before abbreviating it to le Fourneau on his planisphere in 1752, after he had observed and catalogued almost 10,000 southern stars during a two-year stay at the Cape of Good Hope. He devised fourteen new constellations in uncharted regions of the Southern Celestial Hemisphere not visible from Europe. All but one honoured instruments that symbolised the Age of Enlightenment. Lacaille Latinised the name to Fornax Chimiae on his 1763 chart.
+
+</p>
+</div>
+<div id="38" class="panel">
+<h3>	Gemini /JEM-uh-nye, JEM-uh-nee/ (Gem) the Twins </h3>
+<p>
+Genitive: Geminorum /JEM-uh-NOR-um/
+
+- α Gem (Castor) sextuple star system 52 light-years from Earth, which appears as a magnitude-1.6 blue-white star to the unaided eye.
+- β Gem (Pollux) orange-hued giant star of magnitude 1.14, 34 light-years, 60 times sun lumi.
+- M35 (NGC 2168): large, elongated open cluster of mag 5, 2800ly, discovered in the year 1745 by Swiss astronomer Philippe Loys de Chéseaux. It has an area of approximately 0.2 square degrees, the same size as the full moon. The 200 stars of M35 are arranged in chains that curve throughout the cluster. Northweast of η
+- NGC 2158: open cluster, dimmer and further at 12,000ly, but very rich. Southwest of M35. Require dark sky.
+- NGC 2392: Eskimo or Clown Face Nebula, planetary nebula mag 9.2, 4,000ly. Only large telescopes show the face and frill it gets the name from.
+- Medusa Nebula: planetary nebula 1,500ly
+
+One of the 48 ancient Greek constellations and of of the zoodiac. Its symbol is ♊.
+
+The easiest way to locate the constellation is to find its two brightest stars Castor and Pollux eastward from the familiar “V” shaped asterism of Taurus and the three stars of Orion’s belt. Another way is to mentally draw a line from the Pleiades star cluster located in Taurus and the brightest star in Leo, Regulus. In doing so, an imaginary line that is relatively close to the ecliptic is drawn, a line which intersects Gemini roughly at the midpoint of the constellation, just below Castor and Pollux. Since the sky area of Gemini is directed away from the Milky Way, there are comparatively few deep-sky objects of note.
+
+In Greek mythology, Gemini was associated with the myth of Castor and Pollux, the children of Leda and Argonauts both. Pollux was the son of Zeus, who seduced Leda, while Castor was the son of Tyndareus, king of Sparta and Leda's husband. Castor and Pollux were also mythologically associated with St. Elmo's fire in their role as the protectors of sailors. When Castor died, because he was mortal, Pollux begged his father Zeus to give Castor immortality, and he did, by uniting them together in the heavens.
+
+</p>
+</div>
+<div id="39" class="panel">
+<h3>	Grus /GRUSS, GROOS/ (Gru), the Crane </h3>
+<p>
+Genitive: Gruis /GROO-iss/
+
+One of twelve constellations conceived by Petrus Plancius from the observations of Pieter Dirkszoon Keyser and Frederick de Houtman. Grus first appeared on a 35-centimetre-diameter (14-inch) celestial globe published in 1598 in Amsterdam by Plancius and Jodocus Hondius and was depicted in Johann Bayer's star atlas Uranometria of 1603. French explorer and astronomer Nicolas-Louis de Lacaille gave Bayer designations to its stars in 1756, some of which had been previously considered part of the neighbouring constellation Piscis Austrinus. The constellations Grus, Pavo, Phoenix and Tucana are collectively known as the "Southern Birds".
+</p>
+</div>
+<div id="40" class="panel">
+<h3>	Hercules /HER-kyuh-leez/ (Her), Hercules </h3>
+<p>
+Genitive: Herculis /HER-kyuh-liss/
+
+The solar apex, i.e., the point on the sky which marks the direction that the Sun is moving in its orbit around the center of the Milky Way, is located within Hercules, close to Vega in neighboring Lyra.
+
+- Keystone asterism: quadrangle π η ζ and ε as Hercules's torso
+- SS Hercules asterism: sailboat from 7 stars 3° east of ι, named by Phil Harrington
+- Zigzag asterism: dozen faint stars 2° southest of ω
+M13: brightest globular cluster in the northern hemisphere and visible to naked eye at mag 6 and 25,200ly, 300,000 stars. Lying between η and ζ
+- M92: globular cluster of mag 6.4, 26,000ly, denser and smaller, the oldest known at 14bil years
+- NGC 6229: dimmer globular cluster mag 9.4, 100,000ly.
+
+One of the 48 ancient Greek constellations and the fifth largest of the modern constellations.
+
+The story connecting Hercules with the constellation is recounted by Dionysius of Halicarnassus: On his way back to Mycenae from Iberia having obtained the Cattle of Geryon as his tenth labour Heracles came to Liguria in North-Western Italy where he engaged in battle with two giants, Albion and Bergion or Dercynus. The opponents were strong; Hercules was in a difficult position so he prayed to his father Zeus for help. With the aegis of Zeus, Heracles won the battle. It was this kneeling position of Heracles when prayed to his father Zeus that gave the name "the Kneeler".
+
+</p>
+</div>
+<div id="41" class="panel">
+<h3>	Horologium /hor-uh-LOE-jee-um/ (Hor), the Clock </h3>
+<p>
+Genitive: Horologii /hor-uh-LOE-jee-eye/
+
+- R Hor: a red giant Mira variable with one of the widest ranges in brightness known mag 4.7-14.3 in 13 month period, around 1000 light-years from Earth.
+- NGC 1261 is a globular cluster mag 8.
+
+A faint constellation in the southern sky. It was devised by French astronomer Nicolas Louis de Lacaille in 1752 as l'Horloge à pendule & à secondes. Lacaille Latinised the name to Horologium on his 1763 chart.
+
+</p>
+</div>
+<div id="42" class="panel">
+<h3>	Hydra /HIGH-druh/ (Hya), the Female Water Snake </h3>
+<p>
+Genitive: Hydrae /HIGH-dree/
+
+- α Alphard: the solitary one being the only reasonably bright star, mag 2.0, in the constellation. 177ly.
+- 27 Hydrae: binary of mag 5 yellowish and mag 7 pure white, sep 4’.
+- Eaglet asterism: SAO 135896 surrounded by a small triangle of fainter suns, 11° southwest along the line from ε through σ
+- Mini Scorpius asterism: 54-58 Hyd and 4 and 12 Lib, 4 degree west of σ Lib.
+- M83 (NGC 5236): Southern Pinwheel Galaxy, mag 8 face-one spiral galaxy, easly found by using 1, 2, 3, and 4 Centauri as guide stars. A bright stellar point surrounded by the soft glow of its spiral arms.
+- M68 (NGC 4590): globular cluster mag 8, 31,000lynear M83
+- M48 (NGC 2248): open cluster in the western end of the serpent, a little west of Eaglet asterism, a beautiful dim haze of unresolved starlight almost twice as large as the full Moon. Concentrated 80 stars 1500ly
+- NGC 3242: planetary nebula mag 7.5, 1400ly. Discovered in 1785 by William Herschel, it has earned the nickname "Ghost of Jupiter" because of its striking resemblance to the giant planet. Its blue-green disk is visible in small telescopes
+
+One of the 48 ancient Greek constellations, and now the largest and one of the longest.
+
+The shape of Hydra resembles a twisting snake, and features as such in some Greek myths. One myth associates it with a water snake that a crow served Apollo in a cup when it was sent to fetch water; Apollo saw through the fraud, and angrily cast the crow, cup, and snake, into the sky. It is also associated with the monster Hydra, with its many heads, killed by Hercules, represented in another constellation. According to legend, if one of the hydra's heads was cut off, two more would grow in its place. However, Hercules burned out the roots of the heads he severed to prevent them from growing again, and thus overcame the hydra.
+
+</p>
+</div>
+<div id="43" class="panel">
+<h3>	Hydrus /HIGH-drus/ (Hyi), the Male Water Snake </h3>
+<p>
+Genitive: Hydri /HIGH-dry/
+
+As one of the deep southern constellations, it remains below the horizon at latitudes north of the 30th parallel in the Northern Hemisphere, and is circumpolar at latitudes south of the 50th parallel in the Southern Hemisphere.
+
+Hydrus contains only faint deep-sky objects but a small portion of the Large Magellanic Cloud.
+β mag 2.8, the closest reasonably bright star to the south celestial pole.
+
+One of twelve constellations created by Petrus Plancius from the observations of Pieter Dirkszoon Keyser and Frederick de Houtman and it first appeared on a 35-cm (14 in) diameter celestial globe published in late 1597 (or early 1598) in Amsterdam by Plancius and Jodocus Hondius. The first depiction of this constellation in a celestial atlas was in the German cartographer Johann Bayer's Uranometria of 1603. De Houtman included it in his southern star catalogue the same year under the Dutch name De Waterslang, "The Water Snake", it representing a type of snake encountered on the expedition rather than a mythical creature. The French explorer and astronomer Nicolas Louis de Lacaille called it l’Hydre Mâle on the 1756 version of his planisphere of the southern skies, distinguishing it from the feminine Hydra. The French name was retained by Jean Fortin in 1776 for his Atlas Céleste, while Lacaille Latinised the name to Hydrus for his revised Coelum Australe Stelliferum in 1763.
+
+</p>
+</div>
+<div id="44" class="panel">
+<h3>	Indus /IN-dus/ (Ind), the Indian </h3>
+<p>
+Genitive: Indi /IN-dye/
+
+It does not contain any bright star nor other ojbect of interest.
+
+One of twelve constellations created by Petrus Plancius from the observations of Pieter Dirkszoon Keyser and Frederick de Houtman and it first appeared on a 35-cm (14 in) diameter celestial globe published in late 1597 (or early 1598) in Amsterdam by Plancius and Jodocus Hondius. The first depiction of this constellation in a celestial atlas was in Johann Bayer's Uranometria of 1603. Plancius portrayed the figure as a nude male with arrows in both hands but no bow.
+
+</p>
+</div>
+<div id="45" class="panel">
+<h3>	Lacerta /luh-SER-tuh/ (Lac), the Lizard </h3>
+<p>
+Genitive: Lacertae /luh-SER-tee/
+
+- NGC 7243: open cluster mag 8, 2500ly
+
+A small, faint constellation, it was defined in 1687 by the astronomer Johannes Hevelius. Its brightest stars form a "W" shape similar to that of Cassiopeia, and it is thus sometimes referred to as 'Little Cassiopeia'. It is located between Cygnus, Cassiopeia and Andromeda on the northern celestial sphere. The northern part lies on the Milky Way.
+
+</p>
+</div>
+<div id="46" class="panel">
+<h3>	Leo /LEE-oh/ (Leo), the Lion </h3>
+<p>
+Genitive: Leonis /lee-OH-niss/
+
+- The Sickle asterism: ε μ ζ γ η and α
+- α Regulus: meaning the little king, a double star mag 1.- 34 and mag 7.7, 77ly
+- β Denebola: meaningthe lion’s tail, mag 2.23, 36ly
+- Double Cross asterism: 4 optical doubles include τ
+- M65: spiral galaxy, together with M66 and NGC 3628 make the Leo Triplet. It is just west of M66, but at half a magnitude fainter
+- M66: spiral galaxy, 37mil ly, very dim smudge of light lying below a faint star
+- NGC 3628: galaxy
+- M95: spiral galaxy, 20mil ly
+- M96: spiral galaxy, 20mil ly
+- M105: elliptical galaxy mag 9, 1 deg away from M96/M96 pairs, 20 mil ly
+- NGC 2903: spiral galaxy mag 8.9 south of λ, omitted by Messier
+- NGC 3521: flocculent spiral galaxy, a faint, oval halo with just a hint of a stellar core visible with averted vision, 6 degrees southwest of the Double Cross.
+
+One of the constellations of the zodiac, lying between Cancer the crab to the west and Virgo the maiden to the east. Its symbol is ♌. One of the 48 constellations described by the 2nd-century astronomer Ptolemy, Leo remains one of the 88 modern constellations today, and one of the most easily recognizable due to its many bright stars and a distinctive shape that is reminiscent of the crouching lion it depicts. The lion's mane and shoulders also form an asterism known as "The Sickle," which to modern observers may resemble a backwards "question mark."
+
+In Greek mythology, Leo was identified as the Nemean Lion which was killed by Heracles (Hercules to the Romans) during the first of his twelve labours. The Nemean Lion would take women as hostages to its lair in a cave, luring warriors from nearby towns to save the damsel in distress, to their misfortune. The Lion was impervious to any weaponry; thus, the warriors' clubs, swords, and spears were rendered useless against it. Realizing that he must defeat the Lion with his bare hands, Hercules slipped into the Lion's cave and engaged it at close quarters. When the Lion pounced, Hercules caught it in midair, one hand grasping the Lion's forelegs and the other its hind legs, and bent it backwards, breaking its back and freeing the trapped maidens. Zeus commemorated this labor by placing the Lion in the sky.
+
+</p>
+</div>
+<div id="47" class="panel">
+<h3>	Leo Minor /LEE-oh MY-ner/ (LMi), the Lesser Lion </h3>
+<p>
+Genitive: Leonis Minoris /lee-OH-niss mih-NOR-iss/
+
+- Dan Hudak’s Sailboat asterism: bow marked by 22 LMi
+
+A small and faint constellation in the northern celestial hemisphere. Its name is Latin for "the smaller lion", in contrast to Leo, the larger lion. It lies between the larger and more recognizable Ursa Major to the north and Leo to the south. Leo Minor was not regarded as a separate constellation by classical astronomers; it was designated by Johannes Hevelius in 1687.
+
+</p>
+</div>
+<div id="48" class="panel">
+<h3>	Lepus /LEEP-us, LEP-us/ (Lep)</h3>
+<p>
+Genitive: Leporis /LEP-or-iss/
+
+One of the 48 ancient Greek constellation, Lepus is a constellation lying just south of the celestial equator. Its name is Latin for hare. It is located below—immediately south—of Orion (the hunter), and is sometimes represented as a hare being chased by Orion or, alternatively, by Orion's hunting dogs.
+
+α Arneb, meaning hare, mag 2.6
+γ : superb double mag 3.6 yellow and mag 6.2 orange or pale green at sep 97”, 159ly
+R: variable mag 5.5-11.7 across 432d. Rare carbon star in red hue nicknamed Hind’s Crimson Star.
+M79: globular cluster mag 8.0, 42,000ly
+
+</p>
+</div>
+<div id="49" class="panel">
+<h3>	Libra /LEE-bruh, LYE-bruh/ (Lib)</h3>
+<p>
+Genitive: Librae /LEE-bree Genitive: LYE-bree/
+
+A constellation of the zodiac. Its name is Latin for weighing scales, and its symbol is ♎. It is fairly faint, with no first magnitude stars, and lies between Virgo to the west and Scorpius to the east.
+
+Libra was known in Babylonian astronomy as MUL Zibanu (the "scales" or "balance"), or alternatively as the Claws of the Scorpion. The scales were held sacred to the sun god Shamash, who was also the patron of truth and justice. It was also seen as the Scorpion's Claws in ancient Greece. It only became a constellation in ancient Rome, when it began to represent the scales held by Astraea, the goddess of justice, associated with Virgo in the Greek mythology.
+
+The brightest stars in Libra form a quadrangle that distinguishes it for the unaided observer. Traditionally, α (Zubenelgenubi meaning southern claw) and β Librae are considered to represent the scales' balance beam, while γ (Zubenelakrab meaning scorpion’s claw) and σ are the weighing pans.
+
+NGC 5897: mag 9 globular cluster, 50,000ly
+
+</p>
+</div>
+<div id="50" class="panel">
+<h3>	Lupus /LOOP-us/ (Lup)</h3>
+<p>
+Genitive: Lupi /LOOP-eye/
+
+One of the 48 ancient Greek constellations, although it was previously an asterism associated with the neighboring constellation Centaurus. It considered to have been an arbitrary animal, killed, or about to be killed, on behalf of, or for, Centaurus.
+
+</p>
+</div>
+<div id="51" class="panel">
+<h3>	Lynx /LINKS/ (Lyn)</h3>
+<p>
+Genitive: Lyncis /LIN-siss/
+
+A constellation named after the animal, usually observed in the northern sky. The constellation was introduced in the late 17th century by Johannes Hevelius. It is a faint constellation, with its brightest stars forming a zigzag line. Naming it Lynx because of its faintness, Hevelius challenged future stargazers to see it, declaring that only the lynx-eyed (those with good sight) would have been able to recognize it.
+</p>
+</div>
+<div id="52" class="panel">
+<h3>	Lyra /LYE-ruh/ (Lyr)</h3>
+<p>
+Genitive: Lyrae /LYE-ree/
+
+One of 48 ancient Greek constellations, often represented on star maps as a vulture or an eagle carrying a lyre, and hence is sometimes referred to as Vultur Cadens or Aquila Cadens
+
+In Greek mythology, Lyra represents the lyre of Orpheus. Made by Hermes from a tortoise shell, given to Apollo as a bargain, it was said to be the first lyre ever produced. Orpheus's music was said to be so great that even inanimate objects such as trees, streams, and rocks could be charmed. Joining Jason and the Argonauts, his music was able to quell the voices of the dangerous Sirens, who sang tempting songs to the Argonauts.
+
+At one point, Orpheus married Eurydice, a nymph. While fleeing from an attack by Aristaeus, she stepped on a snake that bit her, killing her. To reclaim her, Orpheus entered the Underworld, where the music from his lyre charmed Hades. Hades relented and let Orpheus bring Eurydice back, on the condition that he never once look back until outside. Unfortunately, near the very end, Orpheus faltered and looked back, causing Eurydice to be left in the Underworld forever. Orpheus spent the rest of his life strumming his lyre while wandering aimlessly through the land, rejecting all marriage offers from women.
+
+There are two competing myths relating to the death of Orpheus. According to Eratosthenes, Orpheus failed to make a necessary sacrifice to Dionysus due to his regard for Apollo as the supreme deity instead. Dionysus then sent his followers to rip Orpheus apart. Ovid tells a rather different story, saying that women, in retribution for Orpheus's rejection of marriage offers, ganged up and threw stones and spears. At first, his music charmed them as well, but eventually their numbers and clamor overwhelmed his music and he was hit by the spears. Both myths then state that his lyre was placed in the sky by Zeus, and Orpheus' bones buried by the muses.
+
+Summer Triangle asterism: famed and prominent triangle made of Vega, Altair and Deneb.
+
+α Vega: one of the most-magnificent of all stars, and has been called "arguably the next most important star in the sky after the Sun". Vega was the first star other than the Sun to be photographed, as well as the first to have a clear spectrum recorded, showing absorption lines for the first time. The star was the first single main-sequence star other than the Sun to be known to emit X-rays, and is surrounded by a circumstellar debris disk, similar to the Kuiper Belt. it is the second-brightest star of the northern hemisphere (after Arcturus). 25ly.
+δ: optical binary of mag 4.3 orangish and mag 5.6 bluish-white
+ε: Double-Double system 3.4’ sep.
+M56: loose globular cluster mag 8.3, 100,000 stars at 32,000ly. Fuzzy glow with brighter core nestled among a well-populated field of stars, southeast of a conspicuous asterism of stars shaped like the number 7
+M57 (NGC 6720): Ring Nebula, diameter 1ly, 2000ly from Earth. It is one of the best known planetary nebulae and the second to be discovered, in 1779. In telescopes, the nebula appears as a visible ring with a green tinge; it is slightly elliptical because its three-dimensional shape is a torus or cylinder seen from a slight angle. It can be found halfway between γ and β.
+
+</p>
+</div>
+<div id="53" class="panel">
+<h3>	Mensa /MEN-suh/ (Men)</h3>
+<p>
+Genitive: Mensae /MEN-see/
+
+A constellation in the Southern Celestial Hemisphere near the south celestial pole, one of twelve constellations drawn up in the 18th century by French astronomer Nicolas Louis de Lacaille. Its name is Latin for table, though it originally commemorated Table Mountain and was known as Mons Mensae.
+
+Lacaille created it out of dim Southern Hemisphere stars in honor of Table Mountain, a South African mountain overlooking Cape Town, near the location of Lacaille's observatory. He recalled that the Magellanic Clouds were sometimes known as Cape clouds, and that Table Mountain was often covered in clouds when a southeasterly stormy wind blew. Hence he made a "table" in the sky under the clouds.
+One of the faintest constellations in the night sky, it’s brightest star, α, is barely visible at mag 5.09 in suburban skies. Mensa however convers part of the Large Magellanic Cloud.
+
+</p>
+</div>
+<div id="54" class="panel">
+<h3>	Microscopium /my-cruh-SCOPE-ee-um/ (Mic)</h3>
+<p>
+Genitive: Microscopii /my-cruh-SCOPE-ee-eye/
+
+a minor constellation in the southern celestial hemisphere, one of twelve created in the 18th century by French astronomer Nicolas-Louis de Lacaille and one of several depicting scientific instruments. The name is a Latinised form of the Greek word for microscope. Its stars are faint, brightest star is γ of mag 4.68, and hardly visible from most of the non-tropical Northern Hemisphere.
+
+Describing Microscopium as "totally unremarkable", astronomer Patrick Moore concluded there was nothing of interest for amateur observers.
+
+</p>
+</div>
+<div id="55" class="panel">
+<h3>	Monoceros /muh-NAH-ser-us/ (Mon)</h3>
+<p>
+Genitive: Monocerotis /muh-NAH-ser-OH-tiss/
+
+A faint constellation on the celestial equator. Its name is Greek for unicorn. Its definition is attributed to the 17th-century Dutch cartographer Petrus Plancius in 1612, and it was later charted by German astronomer Jakob Bartsch as Unicornu on his star chart of 1624.
+
+Monoceros is not easily seen with the naked eye, containing only a few fourth magnitude stars such as α mag 3.93 and γ mag 3.98.
+
+Pakan’s 3 asterism: 3 degree southwest of M50, make a figure of 3. May need dark sky.
+Unicorn’s Horn asterism: V-shaped group is composed of 6stars of mag 9 and mag 10, dim and small
+M50: open cluster, a little less than halfway from Sirius to Procyon, like a small patch of light from 80 stars
+NGC 2244: one of the one of the brightest non-Messier clusters in the sky, 40 stars in a tiny rectangular pattern, 4500ly
+NGC 2237, 2238, 2239, 2246: Rosette Nebular, a diffuse nebula surrounding 2244. Each NGC number is for a bright region. More than a degree in diameter and low surface brightness make a real challenge to spot. The energy from the cluster's young stars is ionizing the surrounding hydrogen gas clouds, causing them to glow the distinctive red color in photos.
+NGC2264: Christmas Tree Cluster mag 3.9, 2400ly
+Divining Rod asterism: Y-shape Right Ascension 06h 31.6m, Declination +11° 30.5', some 3° northwest of the Christmas Tree.
+Delta-Wing asterism: RA 06h 26.5m, Dec. +11° 11.7' in the same view as Divining Rod.
+NGC 2301: open cluster, half dozen faint points lined up in an undulating north-south procession
+NGC 2232: open cluster contains mag 5 10 Mon. From δ, shift 12 degrees southwestward toward β and γ Monocerotis
+</p>
+</div>
+<div id="56" class="panel">
+<h3>	Musca /MUSS-cuh/ (Mus)</h3>
+<p>
+Genitive: Muscae /MUSS-see Genitive: MUSS-kee/
+
+A small constellation in the deep southern sky. It was one of 12 constellations created by Petrus Plancius from the observations of Pieter Dirkszoon Keyser and Frederick de Houtman, and it first appeared on a celestial globe 35 cm (14 in) in diameter published in 1597 (or 1598) in Amsterdam by Plancius and Jodocus Hondius. The first depiction of this constellation in a celestial atlas was in Johann Bayer's Uranometria of 1603, though Bayer termed it Apis— "the Bee", a name by which it was known for the next two centuries. A 1603 celestial globe by Willem Blaeu depicts it as providing nourishment for the nearby constellation Chamaeleon—its tongue trying to catch the insect. The French explorer and astronomer Nicolas Louis de Lacaille called it la Mouche on the 1756 version of his planisphere of the southern skies. Jean Fortin retained the French name in 1776 for his Atlas Céleste, while Lacaille latinised the name for his revised Coelum Australe Stelliferum in 1763. Lacaille renamed it to Musca Australis, the Southern Fly—Australis, since it counterparted the now discarded constellation of Musca Borealis composed of a few stars in Aries, and to avoid confusion with Apus. Today, the name is simply Musca.
+
+Musca remains below the horizon for most Northern Hemisphere observers. The pattern of the brightest stars resembles that of Ursa Minor, in that the stars form a pattern reminiscent of a bowl with a handle. The Coalsack Nebula is a dark nebula located mainly in neighbouring Crux that intrudes into Musca.
+
+</p>
+</div>
+<div id="57" class="panel">
+<h3>	Norma /NOR-muh/ (Nor)</h3>
+<p>
+Genitive: Normae /NOR-mee/
+
+A small constellation in the Southern Celestial Hemisphere, was introduced in 1751–52 by Nicolas-Louis de Lacaille with the French name l’Équerre et la Règle, "the Square and Rule".  Lacaille portrayed the constellations of Norma, Circinus and Triangulum Australe, respectively, as a set square and ruler, a compass, and a surveyor's level in a set of draughtsman instruments, in his 1756 map of the southern stars. The level was dangling from the apex of a triangle, leading some astronomers to conclude he was renaming l’Équerre et la Règle to "le Niveau", "the level". In any case, the constellation's name had been shortened and Latinised by Lacaille to Norma by 1763.
+
+Due to its location on the Milky Way, this constellation contains many deep-sky objects such as star clusters
+μ: one of the most luminous stars known, with a luminosity between a quarter million and one million times that of the Sun, and up to 60 times as massive as the Sun.
+NGC 6087: open cluster mag 5.4
+NGC 6067: open cluster mag 5.6 in a rich star field near κ
+NGC 6134: open cluster mag 7.2
+NGC 6167: open cluster mag 6.7
+NGC 6115: open cluster near γ
+NGC 6031: open cluster
+NGC 5999: open cluster
+Abell 3627: also called the Norma Cluster, it is one of the most massive galaxy clusters known to exist, at ten times the average cluster mass.
+
+</p>
+</div>
+<div id="58" class="panel">
+<h3>	Octans /OCK-tanz/ (Oct)</h3>
+<p>
+Genitive: Octantis /ock-TAN-tiss/
+
+One of 14 constellations created by French astronomer Nicolas Louis de Lacaille during his expedition to the Cape of Good Hope, and was originally named l’Octans de Reflexion (“the reflecting octant”). In Europe, it became more widely known as Octans Hadleianus, in honor of English mathematician John Hadley, who invented the octant in 1730.
+
+A very faint constellation, but has the distinction of containing the South Celestial Pole.
+σ: the southern pole star, is a magnitude 5.4 star just over 1 degree away from the true South Celestial Pole. Its relative faintness means that it is not practical for navigation. Conveniently for navigators, there are other, much easier methods for locating the southern celestial pole. For example, the constellation Crux, the Southern Cross, currently points toward the South Celestial Pole, if one draws a line from γ Crucis to α Crucis. Another method includes an asterism made up of σ, χ, τ and υ Octantis, which form a distinctive trapezoid shape.
+
+</p>
+</div>
+<div id="59" class="panel">
+<h3>	Ophiuchus /OFF-ee-YOO-kus, OAF-ee-YOO-kus/ (Oph)</h3>
+<p>
+Genitive: Ophiuchi /OFF-ee-YOO-kye Genitive: OFF-ee-YOO-kye/
+
+One of the 48 ancient Greek constellation, formerly referred to as Serpentarius and Anguitenens. Ophiuchus is depicted as a man grasping a serpent; the interposition of his body divides the snake constellation Serpens into two parts, Serpens Caput and Serpens Cauda, which are in modern times taken with Ophiuchus as one constellation. Ophiuchus straddles the equator but lies predominantly to its south.
+
+To the ancient Greeks, the constellation represented the god Apollo struggling with a huge snake that guarded the Oracle of Delphi.
+
+Later myths identified Ophiuchus with Laocoön, the Trojan priest of Poseidon, who warned his fellow Trojans about the Trojan Horse and was later slain by a pair of sea serpents sent by the gods to punish him. According to Roman era mythography, the figure represents the healer Asclepius, who learned the secrets of keeping death at bay after observing one serpent bringing another healing herbs. To prevent the entire human race from becoming immortal under Asclepius' care, Jupiter killed him with a bolt of lightning, but later placed his image in the heavens to honor his good works.
+
+Aratus describes Ophiuchus as trampling on Scorpius with his feet. This is depicted in Renaissance to Early Modern star charts, beginning with Albrecht Dürer in 1515; in some depictions (such as that of Johannes Kepler in De Stella Nova, 1606), Scorpius also seems to threaten to sting Serpentarius in the foot. This is consistent with Azophi, who already included ψ Oph and ω Oph as the snake-charmer's "left foot", and θ Oph and ο Oph as his "right foot", making Ophiuchus a zodiacal constellation at least as regards his feet. This arrangement has been taken as symbolic in later literature, and placed in relation to the words spoken by God to the serpent in the Garden of Eden (Genesis 3:15).
+
+Ophiuchus hosts many globular clusters, including 20 bright NGCs, because together with Sagittarius it lies in the direction of the galatic core.
+α Rasalhague: "head of the serpent charmer" mag 2.07
+Barnard's Star: nearest star after Proxima/α Centauri, left of β and just north of the V-shaped group of stars in an area that was once occupied by the now-obsolete constellation of Taurus Poniatovii
+ρ: triple stars made of mag 5 blue giant and mag 6 and 8 dwarf companion, engulfed in faint wisps of blue reflection nebulosity IC 4604, a stellar nursery of 300 forming stars 400ly.
+Garden Trowel asterism: three mag 7 make a triangle, and three mag 5-7 make the trail just 1.5° southwest of M62.
+IC 4665
+M9 (NGC 6333): globular cluster
+M10 (NGC 6254): globular cluster mag 6.6, 13,400ly
+M12 (NGC 6218): globular cluster in the same FoV as M10, 17,600ly. There’re also 20 NGC globular clusters in this constellation.
+M14 (NGC 6402): globular cluster, relatively bright
+M19 (NGC 6273): globular cluster, near an arc of three optical doubles 24, 26 and 36. 
+M62 (NGC 6268): globular cluster
+M107 (NGC 6171): loose globular cluster near ζ, require dark sky
+NGC 6633: open cluster mage 5, 30 stars spanning a diameter as large as the Full Moon, shaped like number 7 or "Italy Cluster”
+NGC 6366:
+NGC 6293: globular cluster
+
+</p>
+</div>
+<div id="60" class="panel">
+<h3>	Orion /oh-RYE-un, uh-RYE-un/ (Ori)</h3>
+<p>
+Genitive: the Hunter Genitive: Orionis /or-eye-OH-niss/
+
+One of the most conspicuous and recognizable constellations in the night sky.
+
+Orion was a gigantic, supernaturally strong hunter of ancient times, born to Euryale, a Gorgon, and Poseidon (Neptune), god of the sea in the Graeco-Roman tradition. One myth recounts Gaia's rage at Orion, who dared to say that he would kill every animal on the planet. The angry goddess tried to dispatch Orion with a scorpion. This is given as the reason that the constellations of Scorpius and Orion are never in the sky at the same time. However, Ophiuchus, the Serpent Bearer, revived Orion with an antidote. This is said to be the reason that the constellation of Ophiuchus stands midway between the Scorpion and the Hunter in the sky.
+
+Located on the celestial equator and visible to most part of the world during Northern Hemisphere’s winter (Southern’s Hemisphere’s summer), Orion is very useful as an aid to locating other stars. By extending the line of the Belt southeastward, Sirius (α CMa) can be found; northwestward, Aldebaran (α Tau). A line eastward across the two shoulders indicates the direction of Procyon (α CMi). A line from Rigel through Betelgeuse points to Castor and Pollux (α Gem and β Gem). Additionally, Rigel is part of the Winter Circle asterism. Sirius and Procyon, which may be located from Orion by following imaginary lines (see map), also are points in both the Winter Triangle and the Circle.
+
+- α Betelgeuse: massive M-type red supergiant mag 0.0-1.3. Only 10mil yo, will go burst as supernova in several mil y.
+- β Rigel: B-type blue supergiant mag 0.05-0.18
+- γ Bellatrix: B-type blue giant mag 1.7
+- κ Saiph: mag 2.09
+- Orion’s Belt asterism: consisting of
+    - δ Mintaka: "the belt", eclipsing binary, westernmost and northernmost of the 3 stars of Orion’s Belt mag 2.23
+    - ζ Alnitak: "the girdle", easternmost star in Orion's Belt mag 1.77, 100,000 Sun lumi, 800ly
+    - ε Alnilam: "string of pearl” mag 1.64-1.74
+- Orion's Sword asterism: consiting of
+    - ι Na'ir al Saif: "the Bright One in the Sword.", pretty binocular pairing with mag 4 Struve 747 which by itself is a true binary sep 0.5'
+    - 42, 45 Ori: mag 5 binary make the sword’s handle
+    - Trapezium: the multiple stars θ<sup>1</sup> consist of A, B, C, D. All are stellar infants between 300000-1mil yo. Require above 20x
+    - <a id="M42"></a>M42: the Greate Orion Nebula, an outstretched hand reaching southward and holding the θ stars in the palm. θ1 sits near the tip of what looks like the outline of a finger silhouetted in front of the palm called the Fish's Mouth. It is a cosmic neon sign: emission nebula of hydrogen-II region – excited hydrogen atoms by young stars’ UV radiation, and a stellar maternity ward, with a cluster of 1,000 stars remains obscured behind clouds of opaque dust.
+    - <a id="M43"></a>M43 (NGC 1982): small puff of nebula just north and slightly east of M42. In reality, M43 is an extension of the Orion Nebula and only looks "separated" because of a rift of dark nebulosity slicing between the two.
+- NGC 1981: open cluster whose 4 bright stars look like a small pyramid, just north of 42 Ori.
+- M78 (NGC 2068): comet-alike nebula mag 8.0
+- NGC 1999: bright nebular close to M42
+- NGC 1662: open cluster looks dim, nebulous patch
+- IC 434: the Hoursehead Nebula
+- NGC 2169: small bright open cluster near mid point between ν and ξ, 30 stars
+- Collinder 69: open cluster including λ, 15-20 stars 10 mil yo like Betelgeuse
+- Barnard 33: Horsehead Nebula
+- NGC 2024: Flame Nebula
+- Barnard’s Loop
+
+1.61.	Pavo /PAY-vo/, the Peacock
+Genitive: Pavonis /Puh-VOE-niss/
+</p>
+</div>
+<div id="62" class="panel">
+<h3>	Pegasus /PEG-us-us/ (Peg)</h3>
+<p>
+Genitive: Pegasi /PEG-us-eye/
+
+One of the 48 ancient Greek constellations.
+
+Pegasus, in Greek mythology, was a winged horse with magical powers. One myth regarding his powers says that his hooves dug out a spring, Hippocrene, which blessed those who drank its water with the ability to write poetry. Pegasus was the one who delivered Medusa's head to Polydectes, after which he travelled to Mount Olympus in order to be the bearer of thunder and lightning for Zeus. Eventually, he became the horse to Bellerophon, who was asked to kill the Chimera and succeeded with the help of Athena and Pegasus. Despite this success, after the death of his children, Bellerophon asked Pegasus to take him to Mount Olympus. Though Pegasus agreed, he plummeted back to Earth after Zeus either threw a thunderbolt at him or made Pegasus buck him off. Pegasus was also reconised in some myths as the son of the gorgon Medusa and the god Poseidon.
+
+Square of Pegasus asterism:
+α Markab
+β Scheat
+γ Algenib
+α And Alpheraz
+ε Enif: orange supergiant mag 2.37-2.45, 690ly, marks the horse’s muzzle. Has mag 8 pale blue companion at sep 2’
+π: optical double of mag 4.6 and mag 5.6 at sep 2’
+M15 (NGC 7078): globular cluster of mag 6.4, 34,000ly. 3.5° to the northwest of ε
+NGC 7331: spiral galaxy, 6° east-northeast of π, mag 9 smudge of grayish light, like a miniature version of Andromeda Galaxy, but at 66mil ly away.
+Einstein's Cross: quasar that has been lensed by a foreground galaxy. The elliptical galaxy is 400 million light-years away with a redshift of 0.0394, but the quasar is 8 billion light-years away. The lensed quasar resembles a cross because the gravitational force of the foreground galaxy on its light creates four images of the quasar.
+
+</p>
+</div>
+<div id="63" class="panel">
+<h3>	Perseus /PER-see-us, PER-syoos/ (Per)</h3>
+<p>
+Genitive: the Hero Genitive: Persei /PER-see-eye/
+
+One of the 48 ancient Greek constellations.
+
+In Greek mythology, Perseus was the son of Danaë, who was sent by King Polydectes to bring the head of Medusa the Gorgon — whose visage caused all who gazed upon her to turn to stone. Perseus slew Medusa in her sleep, and Pegasus and Chrysaor appeared from her body.[7] Perseus continued to the realm of Cepheus whose daughter Andromeda was to be sacrificed to Cetus the sea monster.
+
+Perseus rescued Andromeda from the monster by killing it with his diamond sword.[8] He turned Polydectes and his followers to stone with Medusa's head and appointed Dictys the fisherman king.[7] Perseus and Andromeda married and had six children.[8] In the sky, Perseus lies near the constellations Andromeda, Cepheus, Cassiopeia (Andromeda's mother), Cetus, and Pegasus.
+
+The galactic plane of the Milky Way passes through Perseus, but is much less obvious than elsewhere in the sky as it is mostly obscured by molecular clouds.
+α Mirfak or Mirphak: "elbow", supergiant mag 1.79. It and many of the surrounding stars are members of an open cluster known as the α Persei Cluster (Melotte 20 and Collinder 39) 
+β Algol " The Demon's Head": representing the head of the Gorgon Medusa in Greek mythology, linked with ominous legends because of its variability, which is noticeable to the naked eye. Rather than being an intrinsically variable star, it is an eclipsing binary. Mag 2.3-3.5 in 2.867 days.
+ξ Menkhib: blue giant, 330,000 Sun lumi, one of the hottest bright star
+57 Per: binary mag 6 and mag 7 white-hot sep 2’
+Harrington’s Horseshoe asterism: mag 8-9 stars a few degrees north of M76.
+NGC 869 and NGC 884 The Double Cluster: two rich open clusters mag 4 quite near each other, mysteriously ignored by Messier
+M34: open cluster mag 5.5, 100 stars 1,500ly
+M76 Little Dumbbell Nebula: mag 10.1 require telescope, near φ
+Trumpler 2: open cluster 2° west of η, 20+ mag 7 stars
+NGC 1342: open cluster mag 7, tiny tuft of soft light halft way between ζ and β Algol
+</p>
+</div>
+<div id="64" class="panel">
+<h3>	Phoenix /FEE-nix/ (Phe)</h3>
+<p>
+Genitive: Phoenicis /fuh-NICE-iss/
+
+A minor constellation in the southern sky, it was the largest of the twelve constellations established by Petrus Plancius from the observations of Pieter Dirkszoon Keyser and Frederick de Houtman. It first appeared on a 35-cm diameter celestial globe published in 1597 (or 1598) in Amsterdam by Plancius with Jodocus Hondius. The first depiction of this constellation in a celestial atlas was in Johann Bayer's Uranometria of 1603.
+
+It remains below the horizon to anyone living north of the 40th parallel in the Northern Hemisphere, and remains low in the sky for anyone living north of the equator. It is most visible from locations such as Australia and South Africa during late Southern Hemisphere spring. Most of the constellation lies within, and can be located by, forming a triangle of the bright stars Achernar, Fomalhaut and β Ceti—Ankaa lies roughly in the centre of this. The constellation does not lie on the galactic plane of the Milky Way, and there are no prominent star clusters.
+α Ankaa: 'the Phoenix', an orange giant mag 2.37.
+
+</p>
+</div>
+<div id="65" class="panel">
+<h3>	Pictor /PICK-ter/ (Pic)</h3>
+<p>
+Genitive: Pictoris /pick-TOR-iss/
+
+A constellation in the Southern Celestial Hemisphere, located between the star Canopus and the Large Magellanic Cloud. Its name is Latin for painter, and is an abbreviation of the older name Equuleus Pictoris (the "painter's easel"). The French astronomer Abbé Nicolas-Louis de Lacaille first described Pictor as le Chevalet et la Palette (the easel and palette) in 1756. He labelled the constellation Equuleus Pictorius on his 1763 chart, the word "Equuleus" meaning small horse, or easel—perhaps from an old custom among artists of carrying a canvas on a donkey. The German astronomer Johann Bode called it Pluteum Pictoris. The name was shortened to its current form in 1845 by the English astronomer Francis Baily on the suggestion of his countryman Sir John Herschel.
+Normally represented as an easel, Pictor was named by Abbé Nicolas-Louis de Lacaille in the 18th century.
+
+Pictor is a faint constellation; its three brightest stars can be seen near the prominent Canopus. 
+β: mag 3.86, 63.4 ly, surrounded by an unusual dust disk rich in carbon, as well as an exoplanet.
+
+</p>
+</div>
+<div id="66" class="panel">
+<h3>	Pisces /PICE-eez, PISS-eez/ (Psc)</h3>
+<p>
+Genitive: Piscium /PISH-ee-um, PICE-ee-um/
+
+A constellation of the zodiac. Its name is the Latin plural for fish. It lies between Aquarius to the west and Aries to the east. The ecliptic and the celestial equator intersect within this constellation and in Virgo. Its symbol is ♓.
+
+Pisces is associated with Aphrodite and Eros, who escaped from the monster Typhon by leaping into the sea and transforming themselves into fish. In order not to lose each other, they tied themselves together with rope. The Romans adopted the Greek legend, with Venus and Cupid acting as the counterparts for Aphrodite and Eros. The knot of the rope is marked by α, also called Al-Rischa ("the cord" in Arabic).
+
+In 1690, the astronomer Johannes Hevelius in his Firmamentum Sobiescianum regarded the constellation Pisces as being composed of four subdivisions: 
+Piscis Boreus (the North Fish): σ – 68 – 65 – 67 – ψ1 – ψ2 – ψ3 – χ – φ – υ – 91 – τ – 82 – 78 Psc.
+Linum Boreum (the North Cord): χ – ρ,94 – VX(97) – η – π – ο – α Psc.
+Linum Austrinum (the South Cord): α – ξ – ν – μ – ζ – ε – δ – 41 – 35 – ω Psc.
+Piscis Austrinus (the South Fish): ω – ι – θ – 7 – β – 5 – κ,9 – λ – TX(19) Psc.
+In 1754, the astronomer John Hill proposed to treat part of Pisces as a separate constellation, called Testudo (the Turtle) 24 – 27 – YY(30) – 33 – 29 Psc., centred a natural but faint asterism in which the star 20 Psc is intended to be the head of the turtle.
+ψ1: binary mag 5.6 and mag 5.8 at sep 29”
+M74: a loosely wound (type Sc) spiral galaxy, 30mil ly, in the centre of a triangle of η and 2 fainter stars. Dim and diffuse glow
+
+</p>
+</div>
+<div id="67" class="panel">
+<h3>	Piscis Austrinus /PICE-iss (PISS-iss) aw-STRY-nus/ (PsA)</h3>
+<p>
+Genitive: Piscis Austrini /PICE-iss (PISS-iss) aw-STRY-nye/
+
+One of the 48 ancient Greek constellations, in the southern celestial hemisphere. The name is Latin for "the southern fish", in contrast with the larger constellation Pisces, which represents a pair of fishes. Prior to the 20th century, it was also known as Piscis Notius.
+
+In Greek mythology, this constellation is known as the Great Fish and it is portrayed as swallowing the water being poured out by Aquarius, the water-bearer constellation. The two fish of the constellation Pisces are said to be the offspring of the Great Fish.
+
+α Fomalhaut: traditionally represents the mouth of the fish, 18th-brightest star in the night sky at mag 1.16, 25ly.
+Dunlop 241: double pale blue mag 5.9 and pale yellow mag 7.6 sep 93”, just 1 degree northeast of β
+</p>
+</div>
+<div id="68" class="panel">
+<h3>	Puppis /PUP-iss/ (Pup)</h3>
+<p>
+Genitive: Puppis /PUP-iss/
+
+a constellation in the southern sky. Puppis, the Stern or Poop Deck, was originally part of an over-large constellation, the ship of "Jason and the Argonauts", Argo Navis, which centuries after its initial description was divided into three parts, the other two being Carina (the keel and hull), and Vela (the sails of the ship) by Nicolas Louis de Lacaille in 1752. Despite the division, Lacaille kept a single set of Bayer designations for the whole constellation Argo. Therefore, Carina has the α, β and ε, Vela has γ and δ, Puppis has ζ, and so on.
+
+As the Milky Way runs through Puppis, there are a large number of open clusters. 
+ζ	Naos: meaning ship, one of the hottest and most lumi, at least 10000 Sun lumi, 40000K surface temp at 1000ly distant
+ρ	Tureis		
+ξ	Asmidiske:	meaning gunwale
+L2 (HD 56096): red variable mag 2.6-6.2 in 140 days.
+NGC 2451: very bright but not true open cluster, 30 stars including red c Pup
+NGC 2477: 1 degree southeast NGC 2451 and north of b Pup, starless smudge of grayish light. 160 stars mag 10+.
+NGC 2456: 40 stars mag 6-11
+NGC 2571: two dozen mag 9 stars, dim
+NGC 2539: 7 degree south of M48 and near 19 Pup, mag 6.5 from 50 stars.
+M46: open cluster mag 6.1, 5400ly
+M47: open cluster in the same bino view as M46
+M93: open cluster
+Collinder 135: open cluster including orange super giant π, double stars v1 v2 and other blue-white stars
+
+</p>
+</div>
+<div id="69" class="panel">
+<h3>	Pyxis /PIX-iss/ (Pyx)</h3>
+<p>
+Genitive: Pyxidis /PIX-ih-diss/
+
+A small and faint constellation in the southern sky. Abbreviated from Pyxis Nautica, its name is Latin for a mariner's compass (contrasting with Circinus, which represents a draftsman's compasses). The Ancient Greeks identified the four main stars of Pyxis as the mast of the mythological Jason's ship, Argo Navis. However Pyxis was introduced by Nicolas-Louis de Lacaille in 1752 as Boussole (the Marine Compass). Lacaille Latinised the name to Pixis Nautica on his 1763 chart. In the 19th century, John Herschel suggested renaming Pyxis to Malus (meaning the mast) to resurrect the classical configuration of Argo Navis, but the suggestion was not followed.
+
+A faint constellation lies in the plane of the Milky Way, although part of the eastern edge is dark, with material obscuring our galaxy arm there.
+NGC 2818: a planetary nebula that lies within a dim open cluster NGC 2818A of magnitude 8.2.
+NGC 2627: open cluster mag 8.4
+</p>
+</div>
+<div id="70" class="panel">
+<h3>	Reticulum /rih-TICK-yuh-lum/ (Ret)</h3>
+<p>
+Genitive: Reticuli /rih-TICK-yuh-lye/
+
+A small, faint constellation in the southern sky.
+
+In 1952, Nicolas Louis de Lacaille named it le Réticule Rhomboide to commemorate the reticle -- the net of crosshairs at the focus of a telescope eyepiece that is used to measure star positions. The name was later Latinized to Reticulum in his star catalogue Coelum Australe Stelliferum.
+
+</p>
+</div>
+<div id="71" class="panel">
+<h3>	Sagitta /suh-JIT-uh/ (Sge)</h3>
+<p>
+Genitive: Sagittae /suh-JIT-ee/
+
+Sagitta is a dim but distinctive constellation in the northern sky. Its name is Latin for "arrow", and it should not be confused with the significantly larger constellation Sagittarius, the archer.
+
+In ancient Greece, Sagitta was regarded as the weapon that Hercules used to kill the eagle (Aquila) of Jove that perpetually gnawed Prometheus' liver. Eratosthenes claimed it as the arrow with which Apollo exterminated the Cyclopes.
+
+M71: a very loose globular cluster mistaken for quite some time for a dense open cluster, 13,000ly.
+
+</p>
+</div>
+<div id="72" class="panel">
+<h3>	Sagittarius /SAJ-ih-TARE-ee-us/ (Sgr)</h3>
+<p>
+Genitive: Sagittarii /SAJ-ih-TARE-ee-eye/
+
+One of the constellations of the zodiac and the 48 ancient Greek constellations. Its name is Latin for the archer, and its symbol is ♐, a stylized arrow.
+
+In Greek mythology, Sagittarius is usually identified as a centaur: half human, half horse. However, perhaps due to the Greeks' adoption of the Sumerian constellation, some confusion surrounds the identity of the archer. Some identify Sagittarius as the centaur Chiron, the son of Philyra and Cronus, who was said to have changed himself into a horse to escape his jealous wife, Rhea, and tutor to Jason. As there are two centaurs in the sky, some identify Chiron with the other constellation, known as Centaurus. Or, as an alternative tradition holds, that Chiron devised the constellations Sagittarius and Centaurus to help guide the Argonauts in their quest for the Golden Fleece.
+
+A competing mythological tradition, as espoused by Eratosthenes, identified the Archer not as a centaur but as the satyr Crotus, son of Pan, who Greeks credited with the invention of archery. According to myth, Crotus often went hunting on horseback and lived among the Muses, who requested that Zeus place him in the sky, where he is seen demonstrating archery.
+
+The arrow of this constellation points towards the star Antares, the "heart of the scorpion", and Sagittarius stands poised to attack should Scorpius ever attack the nearby Hercules, or to avenge Scorpius's slaying of Orion.
+
+The Milky Way is at its densest near Sagittarius, as this is where the galactic center lies. As a result, Sagittarius contains many star clusters and nebulae.
+The Teapot asterism: The stars δ (Kaus Media), ε (Kaus Australis), ζ (Ascella), and φ form the body of the pot; λ  (Kaus Borealis) is the point of the lid; γ2 (Alnasl) is the tip of the spout; and σ (Nunki) and τ the handle. To complete the teapot metaphor, under good conditions, a particularly dense area of the Milky Way can be seen rising in a north-westerly arc above the spout, like a puff of steam rising from a boiling kettle.
+Teaspoon asterism: ν ρ1 43 π ξ1 and ξ2, northeast of the Teapot’s curved handle
+M8 Lagoon Nebula: mag 3.0, 5000ly, west of λ. The central area of the Lagoon Nebula is also known as the Hourglass Nebula, so named for its distinctive shape. The Hourglass Nebula has its shape because of matter propelled by Herschel 36. Contains many stars in NGC 6530.
+M17 Omega Nebular: aka Horseshoe Nebula or Swan Nebula, mag 6.0, 4890ly. In bino, a straight bar of grayish light. In telescope, a faint hook-shaped appendage curving off the western end of the bar like a swan’s long neck and head. 8000-10000 stars.
+M18: open cluster 40 stars 4200ly and 50mil yo. Small knot of hazy starlight in the same bino view with M16 and M17.
+M20 (NGC 6514): Trifid Nebula, "split into three" emission nebula less than two degrees north of Lagoon Nebula, mag 6.3 but small size.
+M21: open cluster northeast of M20.
+NGC 6537: Red Spider Nebula, 
+M24 Small Sagittarius Star Cloud: star cluster mag 3, 9400ly. Embedded in M24 is NGC 6603, a smaller star cluster that is very dense.
+M25: open cluster mag 4.59
+M22 (NGC 6656): finest globular cluster mag 5.1, can outclass even M13, a blurry, round disk next to an isosceles triangle of faint stars.
+M28 (NGC 6626): globular cluster mag 7.66, small like a fuzzy star in bino, 1 degree northwest of λ.
+M54: the first globular cluster found that is outside the Milky Way.
+M55: faint globular cluster mag 7 but require dark sky. 17,600ly
+M69 and M70: globular cluster mag 8, require dark sky
+M75: faint globular cluster mag 8.6, require dark sky, 67,500ly, very packed
+NGC 6520: tiny open cluster, 3.5 degree south of M8, require dark sky
+NGC 6774: open cluster 1.5 degree west of ν. Weak concentration with 20 scattered stars
+Sagittarius A*: associated with a supermassive black hole at the center of the galaxy, with a mass of 2.6 million solar masses
+</p>
+</div>
+<div id="73" class="panel">
+<h3>	Scorpius /SCOR-pee-us/ (Sco)</h3>
+<p>
+Genitive: Scorpii /SCOR-pee-eye/
+
+One of the 48 ancient Greek constellations and of the zodiac. Its name is Latin for scorpion, and its symbol is ♏.
+
+In Greek mythology, the myths associated with Scorpio almost invariably also contain a reference to Orion. According to one of these myths it is written that Orion boasted to goddess Artemis and her mother, Leto, that he would kill every animal on the Earth. Although Artemis was known to be a hunter herself she offered protection to all creatures. Artemis and her mother Leto sent a scorpion to deal with Orion. The pair battled and the scorpion killed Orion. However, the contest was apparently a lively one that caught the attention of the king of the gods Zeus, who later raised the scorpion to heaven and afterwards, at the request of Artemis, did the same for Orion to serve as a reminder for mortals to curb their excessive pride. There is also a version that Orion was better than the goddess Artemis but said that Artemis was better than he and so Artemis took a liking to Orion. The god Apollo, Artemis's twin brother, grew angry and sent a scorpion to attack Orion. After Orion was killed, Artemis asked Zeus to put Orion up in the sky. So every winter Orion hunts in the sky, but every summer he flees as the constellation of the scorpion comes.
+
+In another Greek story involving Scorpio without Orion, Phaeton (the mortal male offspring of Helios) went to his father, who had earlier sworn by the River Styx to give Phaeton anything he should ask for. Phaeton wanted to drive his father's Sun Chariot for a day. Although Helios tried to dissuade his son, Phaeton was adamant. However, when the day arrived, Phaeton panicked and lost control of the white horses that drew the chariot. First, the Earth grew chill as Phaeton flew too high and encountered the celestial scorpion, its deadly sting raised to strike. Alarmed, he dipped the chariot too close, causing the vegetation to burn. By accident, Phaeton turned most of Africa into desert and darkened the skin of the Ethiopian nation until it was black. Eventually, Zeus was forced to intervene by striking the runaway chariot and Phaeton with a lightning bolt to put an end to its rampage and Phaeton plunged into the River Eridanos.
+
+Scorpius is a large constellation of many bright stars and located in the southern hemisphere near the center of the Milky Way.
+α Antares: rival of Mars, reddish supergiant
+β1 Graffias or Acrab: a triple star
+δ Dschubba: "the forehead", vairable mag 1.6-2.0
+θ Sargas
+ν Jabbah: mag 4 and mag 6 by sep 41”, but it is most likely septuple star system whose only individual star Aa bears the name Jabbah.
+ξ 
+π Fang
+σ Alniyat
+τ Paikauhale "the arteries"
+λ Shaula: sting
+υ Lesath: sting
+ω¹ ω²: optical double of contrasting blue and yellow colours, which can be resolved by the unaided eye.
+False Comet asterism: ζ marks the comet’s coma, also an optical triangle of orange ζ1 and blue-white ζ2, and make an equilateral triangle with SAO 227392. The comet’s tail is made of open clusters NGC 6231, Collinder 316 and NGC 6242
+M4: globular cluster 1° west of Antares, 7200ly, 100,000 stars, core appears in telescope as a bright column of light
+M6 Butterfly Cluster: cluster
+M7 Ptolemy’s Cluster: very bright open cluster
+M80 (NGC 6092): globular cluseter half way between Antares and β, mag 7.3, 33000ly, very dense and hard to resolve
+NGC 6231, open cluster by ζ² 
+NGC 6124
+NGC 6302 Bug Nebular
+NGC 6334 Cat’s Paw Nebula
+
+</p>
+</div>
+<div id="74" class="panel">
+<h3>	Sculptor /SCULP-ter/ (Scl)</h3>
+<p>
+Genitive: Sculptoris /sculp-TOR-iss/
+
+A small and faint constellation in the southern sky. Nicolas-Louis de Lacaille first described the constellation in French as l'Atelier du Sculpteur (the sculptor's studio) in 1751–52, depicting a three-legged table with a carved head on it, and an artist's mallet and two chisels on a block of marble alongside it. Lacaille Latinised the name to Apparatus Sculptoris, but it was later shorten to Sculptor.
+
+Sculptor contains the south galactic pole where stellar density is very low.
+
+NGC 253 Sculptor / Silver Coin Galaxy: a breathtaking galaxy that is often described as the southern hemisphere's answer to the Andromeda Galaxy.
+NGC 247: faint galaxy in averted vision
+NGC 55: String of Pearl Galaxy faint long and thin galaxy in averted vision
+NGC 288: faint globlar cluster in averted vision
+NGC 300: Sculptor Pinwheel Galaxy, C70
+
+</p>
+</div>
+<div id="75" class="panel">
+<h3>	Scutum /SCOOT-um, SCYOOT-um/ (Sct)</h3>
+<p>
+Genitive: Scuti /SCOOT-eye Genitive: SCYOOT-eye/
+
+A small constellation named in 1684 by Polish astronomer Johannes Hevelius (Jan Heweliusz), who originally named it Scutum Sobiescianum (Shield of Sobieski) to commemorate the victory of the Christian forces led by Polish King John III Sobieski (Jan III Sobieski) in the Battle of Vienna in 1683. Later, the name was shortened to Scutum.
+Although not a large constellation, Scutum contains several open clusters, as well as a globular cluster and a planetary nebula.
+Scutum Star Cloud: one of the richest fields dubbed "the gem of the Milky Way". In reallity it is an open window through obscuring interstellar dust that otherwise blocks our view into the depths of the Milky Way.
+Barnard 111 and Barnard 119a: two dark nebulae near the northeastern edge of Scutum Star Cloud.
+M11 the Wild Duck Cluster: open cluster, named by William Henry Smyth in 1844 for its resemblance in the eyepiece to a flock of ducks in flight. Extremely dense with 3000 stars 6200ly
+M26: open cluster small and condesned 30 stars resembling a comet streaking toward the west.
+NGC 6712: globular cluster
+</p>
+</div>
+<div id="76" class="panel">
+<h3>	Serpens /SER-punz/ (Ser)</h3>
+<p>
+Genitive: Serpentis /ser-PEN-tiss/
+
+One of the 48 Greek ancient constellations, it is unique among the modern constellations in being split into two non-contiguous parts, Serpens Caput (Serpent Head) to the west and Serpens Cauda (Serpent Tail) to the east. Between these two halves lies the constellation of Ophiuchus, the "Serpent-Bearer". In figurative representations, the body of the serpent is represented as passing behind Ophiuchus between μ Serpentis in Serpens Caput and ν Serpentis in Serpens Cauda.
+
+Part of the Milky Way's galactic plane passes through Serpens Cauda, which is therefore rich in galactic deep-sky objects.
+Sailboat asterism: 5, 6, 4 Ser and SAO 140444 the hull and deck, plus 6 and 10 Ser the mast.
+IC 4703 Eagle Nebula: contains M16 and the Hubble Space Telescope’s Pillars of Creation, fairly dim at mag 6.0.
+M16: open cluster dozen stars, 5600ly
+R Serpentis and Tau4 Serpentis: naked eye variable stars
+M5: naked-eye globular cluster, 8° southwest of α, 25000ly, 500,000 stars of 13bil yo.
+Palomar 5: globular cluster just south of M5
+Red Square Nebula
+IC 4756 (Graff’s Cluster): west from θ, 50 stars mag 9-10 within 1 degree
+</p>
+</div>
+<div id="77" class="panel">
+<h3>	Sextans /SEX-tunz/ (Sex)</h3>
+<p>
+Genitive: Sextantis /sex-TAN-tiss/
+
+A minor equatorial constellation which was introduced in 1687 by Johannes Hevelius. Its name is Latin for the astronomical sextant, an instrument that Hevelius made frequent use of in his observations.
+
+Sextans as a constellation covers a rather dim, sparse region of the sky. It also lies near the ecliptic, which causes the Moon, and some of the planets to occasionally pass through it for brief periods of time.
+
+</p>
+</div>
+<div id="78" class="panel">
+<h3>	Taurus /TOR-us/ (Tau)</h3>
+<p>
+Genitive: Tauri /TOR-eye/
+
+One of the oldest constellations, dating back to at least the Early Bronze Age when it marked the location of the Sun during the spring equinox. Its importance to the agricultural calendar influenced various bull figures in the mythologies of Ancient Sumer, Akkad, Assyria, Babylon, Egypt, Greece, and Rome. It is also one of the constellations of the zodiac. Taurus is the only constellation crossed by all three of the galactic equator, celestial equator, and ecliptic.
+
+The identification of the constellation of Taurus with a bull is very old, certainly dating to the Chalcolithic, and perhaps even to the Upper Paleolithic. Michael Rappenglück of the University of Munich believes that Taurus is represented in a cave painting at the Hall of the Bulls in the caves at Lascaux (dated to roughly 15,000 BC), which he believes is accompanied by a depiction of the Pleiades. The name "seven sisters" has been used for the Pleiades in the languages of many cultures, including indigenous groups of Australia, North America and Siberia. This suggests that the name may have a common ancient origin.
+
+In Greek mythology, Taurus was identified with Zeus, who assumed the form of a magnificent white bull to abduct Europa, a legendary Phoenician princess. In illustrations of Greek mythology, only the front portion of this constellation is depicted; this was sometimes explained as Taurus being partly submerged as he carried Europa out to sea. A second Greek myth portrays Taurus as Io, a mistress of Zeus. To hide his lover from his wife Hera, Zeus changed Io into the form of a heifer. Greek mythographer Acusilaus marks the bull Taurus as the same that formed the myth of the Cretan Bull, one of The Twelve Labors of Heracles.
+
+Taurus hosts two of the nearest open clusters to Earth, the Pleiades and the Hyades, both of which are visible to the naked eye. At first magnitude, the red giant Aldebaran is the brightest star in the constellation. In the northwest part of Taurus is the supernova remnant Messier 1, more commonly known as the Crab Nebula.
+
+α Aldebaran: Arabic for "the follower", probably from the fact that it follows the Pleiades during the nightly motion of the celestial sphere across the sky. Aldebaran forms the bull's bloodshot eye, which has been described as "glaring menacingly at the hunter Orion"
+The Hyades cluster: prominent members form the V shape around Aldebaran.
+M45 Pleiades: aka Seven Sisters by the 7 prominent stars form a naked eye open clusters. Other 500-1000 stars of 100mil yo. Soft wisps of bluish reflection nebula in extremely dark sky.
+Davis’s Dog asterism: ω, 51, 53, 56, 65, 67, κ, 69, 70 and
+72 Tau.
+Ally’s Braid asterism: "the flowing locks of Lady Alcyone" made of 7 star mag 6-7 spanning less than a degree south east from Pleiad Alcyone.
+θ Chakumuy: naked eye double star 5.6’ sep, together with SAO 93975, SAO 93981, 80 and 81 Tau form the equilateral triple double.
+β El Nath: aka γ Aur, the butting by the horns, mag 1.65
+λ: eclipsing binary star per 3.953 days dimmer by 1.1 mag.
+M1 (NGC 1952) Crab Nebula: mag 8.4 supernova remnant
+NGC 1514 Crystal Ball Nebula: first proven nebulous cloud.
+NGC 1746: mag 6 asterism, in the Taurus dark clouds (Taurus-Auriga complex), one of the nearest active star forming regions.
+NGC 1647: mag 6.4 open cluster a third of the way from the Hyades to the tips of Taurus' horns, 200 faint stars
+NGC 1817: mag 7.7 open cluster
+NGC 1746: dozen of stars more obvious than NGC 1647
+NGC 1807: open cluster 20 stars, next to NGC 1817. The two faint glows look like a bow tie or Taurus’ Double Cluster.
+Collinder 65: open cluster like Orion’s spear heaving at Taurus.
+
+</p>
+</div>
+<div id="79" class="panel">
+<h3>	Telescopium/ (Tel)</h3>
+<p>
+Genitive: Telescopii/
+
+A minor constellation in the southern celestial hemisphere, one of twelve named in the 18th century by French astronomer Nicolas-Louis de Lacaille in 1751-52 and one of several depicting scientific instruments. Its name is a Latinized form of the Greek word for telescope. Telescopium was later much reduced in size by Francis Baily and Benjamin Gould.
+
+</p>
+</div>
+<div id="80" class="panel">
+<h3>	Triangulum /try-ANG-gyuh-lum/ (Tri)</h3>
+<p>
+Genitive: Trianguli /try-ANG-gyuh-lye/
+
+One of the 48 ancient Greek constellations, its name is Latin for "triangle", derived from its three brightest stars, which form a long and narrow triangle.
+
+The Babylonian called it The Plough and its first appearance in the pre-dawn sky (heliacal rising) in February marked the time to begin spring ploughing in Mesopotamia. The Ancient Greeks called Triangulum Deltoton (Δελτωτόν), as the constellation resembled an upper-case Greek letter delta (Δ). It was transliterated by Roman writers, then later Latinised as Deltotum. Eratosthenes linked it with the Nile Delta, while the Roman writer Hyginus associated it with the triangular island of Sicily, formerly known as Trinacria due to its shape. It was also called Sicilia, because the Romans believed Ceres, patron goddess of Sicily, begged Jupiter to place the island in the heavens. Greek astronomers such as Hipparchos and Ptolemy called it Trigonon (Τρίγωνον), and later, it was Romanized as Trigonum. Other names referring to its shape include Tricuspis and Triquetrum. Alpha and Beta Trianguli were called Al Mīzān, which is Arabic for "The Scale Beam".
+
+ι: a double star whose components can be separated by medium-sized telescopes into a strong yellow and a contrasting pale blue star. Both of these are themselves close binaries.
+M33 Triangulum Galaxy: spiral galaxy discovered by Giovanni Battista Hodierna in the 17th century. A distant member of the Local Group, 2.3mil ly mag 5.8 but requires dark skies.
+</p>
+</div>
+<div id="81" class="panel">
+<h3>	Triangulum Australe /try-ANG-gyuh-lum aw-STRAL-ee/ (TrA)</h3>
+<p>
+Genitive: Trianguli Australis /try-ANG-gyuh-lye aw-STRAL-iss/
+
+A small constellation in the far Southern Celestial Hemisphere, it was first depicted on a celestial globe as Triangulus Antarcticus by Petrus Plancius in 1589, and later with more accuracy and its current name by Johann Bayer in his 1603 Uranometria. The French explorer and astronomer Nicolas Louis de Lacaille charted and gave the brighter stars their Bayer designations in 1756.
+
+Although the constellation lies in the Milky Way and contains many stars, deep-sky objects are not prominent.
+α Atria: mag 1.91, 424ly, gian star diameter 130 times that of our sun that almost reaches the orbit of Venus.
+NGC 6025: open cluster 30 stars 2500ly, next to β
+
+</p>
+</div>
+<div id="82" class="panel">
+<h3>	Tucana /too-KAY-nuh, too-KAH-nuh/ (Tuc)</h3>
+<p>
+Genitive: Tucanae /too-KAY-nee Genitive: too-KAH-nee/
+
+a constellation of stars in the southern sky, named after the toucan, a South American bird. It is one of twelve constellations conceived in the late sixteenth century by Petrus Plancius from the observations of Pieter Dirkszoon Keyser and Frederick de Houtman. Tucana first appeared on a 35-centimetre-diameter celestial globe published in 1598 in Amsterdam by Plancius and Jodocus Hondius and was depicted in Johann Bayer's star atlas Uranometria of 1603. French explorer and astronomer Nicolas Louis de Lacaille gave its stars Bayer designations in 1756. The constellations Tucana, Grus, Phoenix and Pavo are collectively known as the "Southern Birds".
+
+The constellation contains 47 Tucanae and most of the Small Magellanic Cloud.
+
+Small Magellanic Cloud: a dwarf galaxy that is one of the nearest neighbors to the Milky Way galaxy at a distance of 210,000 light-years. Though it probably formed as a disk shape, tidal forces from the Milky Way have distorted it. Along with the Large Magellanic Cloud, it lies within the Magellanic Stream, a cloud of gas that connects the two galaxies.
+47 Tucanae (NGC 104): the second-brightest globular cluster in the sky after ω Centauri, lies just west of the Small Magellanic Cloud, mag 3.9, 14700ly. 12bil yo.
+NGC 362: globular cluster, mag 6.4, 27700ly
+
+</p>
+</div>
+<div id="83" class="panel">
+<h3>	Ursa Major /ER-suh MAY-jur/ (UMa)</h3>
+<p>
+Genitive: Ursae Majoris /ER-suh muh-JOR-iss/
+
+One of the 48 ancient Green constellations and the third largest.
+
+The constellation of Ursa Major has been seen as a bear, usually a female bear, by many distinct civilizations. This may stem from a common oral tradition stretching back more than 13,000 years. In Roman mythology, Jupiter (the king of the gods) lusts after a young woman named Callisto, a nymph of Diana. Juno, Jupiter's jealous wife, discovers that Callisto has a son named Arcas, and believes it is by Jupiter. Juno then transforms the beautiful Callisto into a bear so she no longer attracts Jupiter. Callisto, while in bear form, later encounters her son Arcas. Arcas almost shoots the bear, but to avert the tragedy, Jupiter turns Arcas into a bear too and puts them both in the sky, forming Ursa Major and Ursa Minor. Callisto is Ursa Major and her son, Arcas, is Ursa Minor.
+
+The Big Dipper or The Plough asterism: 
+α Dubhe: "the bear" mag 1.79
+β Merak: "the loins of the bear" mag 2.37. Together with Dubhe are known as the "pointer stars" because they are helpful for finding Polaris, also known as the North Star or Pole Star.
+γ Phecda or Phad: "thigh" mag 2.44.
+δ Megrez: "root of the tail,"
+ε Alioth: "black horse," the name corrupted from the original and mis-assigned to the similarly named Alcor, the naked-eye binary companion of Mizar, mag 1.76
+ζ Mizar: "girdle," forms a famous double star, with its optical companion Alcor (80 UMa), the two of which were termed the "horse and rider" by the Arabs. The ability to resolve the two stars with the naked eye is often quoted as a test of eyesight, although even people with quite poor eyesight can see the two stars.
+η Alkaid or Benetnash: "end of the tail." mag 1.85
+
+"Three Leaps of the Gazelle" asterism: a series of three pairs of stars found along the southern border of the constellation
+From southeast to southwest, the "first leap", comprising ν and ξ UMa (Alula Borealis and Australis, respectively); the "second leap", comprising λ and μ UMa (Tania Borealis and Australis); and the "third leap", comprising ι and κ UMa, (Talitha Borealis and Australis).
+M40 (Winnecke 4): mag 9 optical double star sep 50”, 1° northeast of 70 UMa. Mistakenly included in Messier’s Catalogue.
+M81: one of the brightest galaxies mag 6.9, nearly face-on Sb spiral. 11.8mil ly. Bode's Nebula discovered by Johann Bode in 1774. Oval smudge southeast of 24 UMa.
+M82: brightest infrared galaxy, interacting gravitationally with M81. Half a degree northeast of M82. Dim, elongated disk of grayish light, appearing like nickname Cigar Galaxy.
+M97 Owl Nebula: bright planetary, mag 10 1630ly, at the bottom of the bowl, low surface brightness requires dark sky
+M101 Pinwheel Galaxy: spiral mag 7.5 25mil ly, northest of η, discovered by Pierre Méchain in 1781
+M108: edge-on spiral galaxy, pencil-thin smudge in telescope
+
+</p>
+</div>
+<div id="84" class="panel">
+<h3>	Ursa Minor /ER-suh MY-ner/ (UMi)</h3>
+<p>
+Genitive: Ursae Minoris /ER-suh mih-NOR-iss/
+
+One of the 48 ancient Green constellations traditionally been important for navigation, particularly by mariners, because of Polaris being the North Star.
+
+The tradition of naming the northern constellations "bears" appears to be genuinely Greek, although Homer refers to just a single "bear". The original "bear" is thus Ursa Major, and Ursa Minor was admitted as second, or "Phoenician Bear" (Ursa Phoenicia, hence Φοινίκη, Phoenice) only later, according to Strabo due to a suggestion by Thales, who suggested it as a navigation aid to the Greeks, who had been navigating by Ursa Major. In classical antiquity, the celestial pole was somewhat closer to Beta Ursae Minoris than to Alpha Ursae Minoris, and the entire constellation was taken to indicate the northern direction. Since the medieval period, it has become convenient to use Polari as the north star, even though it was still several degrees away from the celestial pole. Its New Latin name of stella polaris was coined only in the early modern period.
+
+Ursa Minor is rather devoid of deep-sky objects.
+α Polaris: the North Pole Star, yellow-white supergiant and the brightest Cepheid variable star in the night sky mag 1.97- 2.00 over a period of 3.97 days, 432ly, 6 Sun mass, 45 Sun radius, 2500 Sun lumi.
+Burnham’s Engagement Ring asterism: Polaris and a circlet of faint stars.
+O’Meara’s Fishhook asterism: mag 7 and 8 stars west of 3 and 4
+
+</p>
+</div>
+<div id="85" class="panel">
+<h3>	Vela /VEE-luh, VAY-luh/ (Vel)</h3>
+<p>
+Genitive: Velorum /vee-LOR-um Genitive: vuh-LOR-um/
+
+A constellation in the southern sky. Its name is Latin for the sails of a s hip, and it was originally part of a larger constellation, the ship Argo Navis, which was later divided into three parts, the others being Carina and Puppis by Nicolas Louis de Lacaille in 1752.
+
+γ Suhail: a complex multiple star system, main component blue-white star mag 1.83 of 280,000 Sun lumi; second component is an extremely rare example of hot star known as a Wolf–Rayet star, and is the brightest example in the sky. It has a surface temperature of 57,000 and is around 170,000 times as luminous as our sun, though it radiates most of its energy in the ultraviolet spectrum. The two pairs are separated by 41 arcseconds, easily separable in binoculars.
+NGC 3132 Southern Ring Nebula or Eight-Burst Nebula: planetary on the border with Antlia.
+NGC 2669: open cluster 90 stars
+NGC 2670: open cluster mag 7.8, 3200ly
+NGC 2547: open cluster 110 stars mag 9+ 3° southward from γ
+NGC 3201: globular cluster
+IC 2391: just north of δ and include ο and several doubles
+
+</p>
+</div>
+<div id="86" class="panel">
+<h3>	Virgo /VER-go/ (Vir)</h3>
+<p>
+Genitive: Virginis /VER-jin-iss/
+
+One of the constellations of the zodiac. Its name is Latin for virgin, and its symbol is ♍. Lying between Leo to the west and Libra to the east, it is the second-largest constellation in the sky (after Hydra) and the largest constellation in the zodiac. It can be easily found through its brightest star, Spica.
+
+Early Greek astronomy associated the Babylonian constellation with their goddess of wheat and agriculture, Demeter. The Romans associated it with their goddess Ceres. Alternatively, the constellation was sometimes identified as the virgin goddess Iustitia or Astraea, holding the scales of justice in her hand (that now are separated as the constellation Libra). Another Greek myth from later, Classical times, identifies Virgo as Erigone, the daughter of Icarius of Athens. Icarius, who had been favored by Dionysus and was killed by his shepherds while they were intoxicated after which Erigone hanged herself in grief; in versions of this myth, Dionysus is said to have placed the father and daughter in the stars as Boötes and Virgo respectively. Another figure who is associated with the constellation Virgo was the spring goddess Persephone, the daughter of Zeus and Demeter who had married Hades and resided in the Underworld during summer.
+
+In the Poeticon Astronomicon by Hyginus (1st century BC), Parthenos (Παρθένος) is the daughter of Apollo and Chrysothemis, who died a maiden and was placed among the stars as the constellation. Diodorus Siculus has an alternative account, according to which Parthenos was the daughter of Staphylus and Chrysothemis, sister of Rhoeo and Molpadia (Hemithea). After a suicide attempt she and Hemithea were carried by Apollo to Chersonesus, where she became a local goddess. Strabo also mentions a goddess named Parthenos worshipped throughout Chersonesus.
+
+α Spica: mag 0.08, can be found by following the curve of the Big Dipper/Plough to Arcturus in Boötes and continuing from there in the same curve ("follow the arc to Arcturus and speed on to Spica").
+
+Because of the presence of a galaxy cluster (consequently called the Virgo Cluster) within its borders 5° to 12° west of ε Vir (Vindemiatrix), this constellation is especially rich in galaxies.
+M49: elliptical
+M58: spiral
+M59: elliptical
+M60: elliptical
+M61: spiral
+M84: lenticular 60Mly
+M86: lenticular
+M87: elliptical and a famous radio source due to its jet of electrons being flung out of the galaxy by its central supermassive black hole, largest in the cluster. 60Mly
+M89: elliptical
+M90: spiral
+M104 Sombrero Galaxy: an unusual spiral galaxy not part of the cluster, located about 10° due west of Spica, 28Mly
+NGC 4438: pculiar 50Mly
+NGC 4639: face-one spiral 78Mly
+NGC 4981: 
+
+</p>
+</div>
+<div id="87" class="panel">
+<h3>	Volans /VOH-lanz/ (Vol)</h3>
+<p>
+Genitive: Volantis /vo-LAN-tiss/
+
+A constellation in the southern sky. It represents a flying fish; its name is a shortened form of its original name, Piscis Volans. Volans was one of twelve constellations created by Petrus Plancius from the observations of Pieter Dirkszoon Keyser and Frederick de Houtman and it first appeared on a 35-cm diameter celestial globe published in 1597 (or 1598) in Amsterdam by Plancius with Jodocus Hondius. The first depiction of this constellation in a celestial atlas was in Johann Bayer's Uranometria of 1603.
+
+Volans represents a type of tropical fish that can jump out of the water and glide through the air on wings. In early celestial maps, the flying fish was often depicted as accompanying the ship Argo Navis, and being chased by the predatory fish represented by the adjoining constellation Dorado.
+
+γ: double star mag 3.8 and 5.6
+ε: double star mag 4.4 and 7.3
+</p>
+</div>
+<div id="88" class="panel">
+<h3>	Vulpecula /vul-PECK-yuh-luh/ (Vul)</h3>
+<p>
+Genitive: Vulpeculae /vul-PECK-yuh-lee/
+
+a faint constellation in the northern sky, in the middle of the Summer Triangle (an asterism consisting of the bright stars Deneb, Vega, and Altair). In the late 17th century, the astronomer Johannes Hevelius created Vulpecula. It was originally known as Vulpecula cum ansere ("the little fox with the goose") or Vulpecula et Anser ("the little fox and the goose"), and was illustrated with a goose in the jaws of a fox. Hevelius did not regard the fox and the goose to be two separate constellations, but later the stars were divided into a separate Anser and Vulpecula. Today, they have been merged again under the name of the fox, but the goose is remembered by the name of the star α Vulpeculae: Anser.
+
+α Anser: the goose, mag 4.4 red giant 297ly, optically double of sep 413.7”.
+Brocchi's Cluster (Collinder 399) aka The Coathanger: an asterism formerly thought to be an open cluster, but later found to be asterism of randome stars from 220 to 1100ly.
+M27 Dumbbell Nebula: is a large, bright planetary nebula which was discovered by the French astronomer Charles Messier in 1764 as the very first object of its kind. It can be seen with good binoculars in a dark sky location, appearing as a dimly glowing disk approximately 6 arcminutes in diameter. A telescope reveals its double-lobed shape, similar to that of an hourglass. Half a degree southeast of 14 Vul.
+PSR B1919+21: in 1967, the first pulsar was discovered in Vulpecula by Jocelyn Bell, supervised by Antony Hewish, in Cambridge. While they were searching for scintillation of radio signals of quasars, they observed pulses which repeated with a period of 1.3373 seconds. Terrestrial origin of the signal was ruled out because the time it took the object to reappear was a sidereal day instead of a solar day. This anomaly was finally identified as the signal of a rapidly rotating neutron star. Fifteen years after the first pulsar was discovered, the first millisecond pulsar, PSR B1937+21, was also discovered in Vulpecula, only a few degrees in the sky away from PSR B1919+21.
+Stock 1: open cluster 19 stars spanning 52’, about 3.5 deg southeast Albireo and 2 deg east-northeast of α Vul.
+</p>
+</div>
+        <script>
+            // Each item has multiple fields to search against
+            const constellations = [
+                { id: 1, name: "Andromeda", features: "Chained Maiden Alpheratz Mirach Almach M31 M32 M110 NGC752 C22 NGC7662 C18" },
+                { id: 2, name: "Antlia", features: "Air Pump Alpha-Antliae NGC2997 NGC3132" },
+                { id: 3, name: "Apus", features: "Bird of Paradise Alpha-Apodis NGC6101 IC4499" },
+                { id: 4, name: "Aquarius", features: "Water Bearer Sadalsuud Sadalmelik Skat M2 M72 M73 NGC7009 C55 NGC7293 C63" },
+                { id: 5, name: "Aquila", features: "Eagle Altair Tarazed Alshain NGC6709 NGC6755 NGC6781" },
+                { id: 6, name: "Ara", features: "Altar Beta-Arae Alpha-Arae NGC6193 C82 NGC6397 C86 NGC6352" },
+                { id: 7, name: "Aries", features: "Ram Hamal Sheratan Mesarthim NGC772 NGC697" },
+                { id: 8, name: "Auriga", features: "Charioteer Capella Menkalinan Elnath M36 M37 M38 IC405 C31 IC410 NGC1931" },
+                { id: 9, name: "Boötes", features: "Herdsman Arcturus Izar Muphrid Kite-Asterism NGC5466 NGC5248" },
+                { id: 10, name: "Caelum", features: "Engraving Tool Alpha-Caeli Gamma-Caeli NGC1679" },
+                { id: 11, name: "Camelopardalis", features: "Giraffe Beta-Camelopardalis Kemble's-Cascade NGC1502 NGC2403 C7 IC342 C5" },
+                { id: 12, name: "Cancer", features: "Crab Acubens Tarf Asellus-Australis M44-Beehive M67 NGC2775" },
+                { id: 13, name: "Canes Venatici", features: "Hunting Dogs Cor-Caroli Chara M51-Whirlpool M63-Sunflower M94 M106 M3 NGC4631 C32" },
+                { id: 14, name: "Canis Major", features: "Great Dog Sirius Adhara Wezen Mirzam M41 NGC2362 C64 NGC2359" },
+                { id: 15, name: "Canis Minor", features: "Little Dog Procyon Gomeisa NGC2485" },
+                { id: 16, name: "Capricornus", features: "Sea Goat Deneb-Algedi Dabih Algedi M30 NGC6907" },
+                { id: 17, name: "Carina", features: "Keel Canopus Miaplacidus Avior False-Cross NGC3372 C92 NGC2516 C96 NGC2808 IC2602 C102" },
+                { id: 18, name: "Cassiopeia", features: "Queen Schedar Caph Navi Ruchbah W-Asterism M52 M103 NGC457 C13 NGC7789 IC1805 IC1848 NGC281" },
+                { id: 19, name: "Centaurus", features: "Centaur Alpha-Centauri Hadar Menkent NGC5139-Omega-Centauri C80 NGC5128-Centaurus-A C77 NGC3766 C97 NGC3918" },
+                { id: 20, name: "Cepheus", features: "King Alderamin Alfirk Errai House-Asterism NGC6946 C12 NGC7023 C4 IC1396 NGC188 C1" },
+                { id: 21, name: "Cetus", features: "Whale Diphda Menkar Mira M77 NGC246 C56 NGC247 C62" },
+                { id: 22, name: "Chamaeleon", features: "Chameleon Alpha-Chamaeleontis Gamma-Chamaeleontis NGC3195 C109" },
+                { id: 23, name: "Circinus", features: "Compass Alpha-Circini Beta-Circini NGC5823 C88" },
+                { id: 24, name: "Columba", features: "Dove Phact Wazn NGC1851 C73 NGC1792" },
+                { id: 25, name: "Coma Berenices", features: "Berenice's Hair Beta-Comae-Berenices Diadem M53 M64-Black-Eye M85 M88 M91 M98 M99 M100 NGC4565 C38 Melotte-111" },
+                { id: 26, name: "Corona Australis", features: "Southern Crown Meridiana Alpha-Coronae-Australis NGC6541 C78 NGC6729" },
+                { id: 27, name: "Corona Borealis", features: "Northern Crown Alphecca Nusakan Abell-2065" },
+                { id: 28, name: "Corvus", features: "Crow Gienah Kraz Algorab NGC4038 C60 NGC4039 C61 NGC4361" },
+                { id: 29, name: "Crater", features: "Cup Delta-Crateris Alkes NGC3511 NGC3887" },
+                { id: 30, name: "Crux", features: "Southern Cross Acrux Mimosa Gacrux Imai Southern-Cross NGC4755-Jewel-Box C94 Coalsack-Nebula C99" },
+                { id: 31, name: "Cygnus", features: "Swan Deneb Albireo Sadr Gienah Northern-Cross M29 M39 NGC6960 C34 NGC6992 C33 NGC7000 C20 NGC6826 C15 IC5070" },
+                { id: 32, name: "Delphinus", features: "Dolphin Sualocin Rotanev Job's-Coffin NGC6934 C47 NGC7006 C42" },
+                { id: 33, name: "Dorado", features: "Dolphinfish Alpha-Doradus Beta-Doradus Large-Magellanic-Cloud NGC2070-Tarantula C103" },
+                { id: 34, name: "Draco", features: "Dragon Eltanin Rastaban Thuban Lozenge-Asterism M102 NGC6543-Cat's-Eye C6 NGC5907" },
+                { id: 35, name: "Equuleus", features: "Little Horse Kitalpha Alpha-Equulei NGC7015" },
+                { id: 36, name: "Eridanus", features: "River Achernar Cursa Zaurak NGC1535 NGC1291 NGC1300 C51 IC2118" },
+                { id: 37, name: "Fornax", features: "Furnace Alpha-Fornacis Beta-Fornacis NGC1316 NGC1365 Fornax-Cluster" },
+                { id: 38, name: "Gemini", features: "Twins Pollux Castor Alhena Tejat M35 NGC2392-Eskimo C39 NGC2158 IC443" },
+                { id: 39, name: "Grus", features: "Crane Alnair Tiaki Al-Dhanab Grus-Quartet NGC7582 NGC7552" },
+                { id: 40, name: "Hercules", features: "Hero Kornephoros Rasalgethi Keystone-Asterism M13 M92 NGC6210" },
+                { id: 41, name: "Horologium", features: "Clock Alpha-Horologii R-Horologii NGC1261 C87" },
+                { id: 42, name: "Hydra", features: "Water Snake Alphard Gamma-Hydrae M48 M68 M83 NGC3242-Ghost-of-Jupiter C59" },
+                { id: 43, name: "Hydrus", features: "Little Water Snake Beta-Hydri Alpha-Hydri NGC1466" },
+                { id: 44, name: "Indus", features: "Indian The-Persian Alpha-Indi NGC7090 NGC7049" },
+                { id: 45, name: "Lacerta", features: "Lizard Alpha-Lacertae Beta-Lacertae NGC7243 C16 NGC7209" },
+                { id: 46, name: "Leo", features: "Lion Regulus Denebola Algieba Zosma Sickle-Asterism M65 M66 M95 M96 M105 NGC3628 NGC2903" },
+                { id: 47, name: "Leo Minor", features: "Little Lion Praecipua Beta-Leonis-Minoris NGC3344 NGC3432" },
+                { id: 48, name: "Lepus", features: "Hare Arneb Nihal M79 NGC2017 IC418" },
+                { id: 49, name: "Libra", features: "Scales Zubeneschamali Zubenelgenubi Brachium NGC5897" },
+                { id: 50, name: "Lupus", features: "Wolf Alpha-Lupi Beta-Lupi NGC5822 NGC5986 IC4406" },
+                { id: 51, name: "Lynx", features: "Lynx Alpha-Lyncis 38-Lyncis NGC2419 C25 NGC2683" },
+                { id: 52, name: "Lyra", features: "Lyre Vega Sheliak Sulafat Epsilon-Lyrae M57-Ring M56" },
+                { id: 53, name: "Mensa", features: "Table Mountain Alpha-Mensae Gamma-Mensae NGC1841" },
+                { id: 54, name: "Microscopium", features: "Microscope Gamma-Microscopii Alpha-Microscopii NGC6925" },
+                { id: 55, name: "Monoceros", features: "Unicorn Beta-Monocerotis Alpha-Monocerotis M50 NGC2244-Rosette C50 NGC2264 C41 NGC2261 C46" },
+                { id: 56, name: "Musca", features: "Fly Alpha-Muscae Beta-Muscae NGC4833 C105 NGC4372 C108 NGC5189" },
+                { id: 57, name: "Norma", features: "Carpenter's Square Gamma2-Normae Epsilon-Normae NGC6067 C89 NGC6087 C81" },
+                { id: 58, name: "Octans", features: "Octant Nu-Octantis Sigma-Octantis Melotte-227" },
+                { id: 59, name: "Ophiuchus", features: "Serpent Bearer Rasalhague Sabik Cebalrai M9 M10 M12 M14 M19 M62 M107 NGC6572 IC4665" },
+                { id: 60, name: "Orion", features: "Hunter Betelgeuse Rigel Bellatrix Mintaka Alnilam Alnitak Saiph Orion's-Belt M42 M43 M78 NGC2024 NGC1977 IC434" },
+                { id: 61, name: "Pavo", features: "Peacock Peacock Beta-Pavonis NGC6752 C93 NGC6744 C101" },
+                { id: 62, name: "Pegasus", features: "Winged Horse Markab Scheat Algenib Enif Great-Square M15 NGC7331 C30 NGC7479 C44" },
+                { id: 63, name: "Perseus", features: "Hero Mirfak Algol Atik M34 M76 NGC869 C14 NGC884 C14 NGC1499-California NGC1333 NGC1275 C24" },
+                { id: 64, name: "Phoenix", features: "Phoenix Ankaa Beta-Phoenicis NGC625" },
+                { id: 65, name: "Pictor", features: "Painter's Easel Alpha-Pictoris Beta-Pictoris Kapteyn's-Star NGC1705" },
+                { id: 66, name: "Pisces", features: "Fishes Alpherg Fumalsamakah Circlet-Asterism M74 NGC524" },
+                { id: 67, name: "Piscis Austrinus", features: "Southern Fish Fomalhaut Lacaille-9352 NGC7314" },
+                { id: 68, name: "Puppis", features: "Stern Naos Tureis Asmidiske M46 M47 M93 NGC2477 C71 NGC2451 NGC2440" },
+                { id: 69, name: "Pyxis", features: "Compass Alpha-Pyxidis Beta-Pyxidis NGC2613 NGC2818" },
+                { id: 70, name: "Reticulum", features: "Reticle Alpha-Reticuli Beta-Reticuli NGC1313" },
+                { id: 71, name: "Sagitta", features: "Arrow Gamma-Sagittae Delta-Sagittae M71 NGC6838" },
+                { id: 72, name: "Sagittarius", features: "Archer Kaus-Australis Nunki Ascella Teapot-Asterism M8-Lagoon M20-Trifid M17-Omega M22 M24 M25 M28 M54 M55 M69 M70 M75 NGC6822 C57 NGC6537" },
+                { id: 73, name: "Scorpius", features: "Scorpion Antares Shaula Sargas Dschubba Fish-Hook M4 M6-Butterfly M7-Ptolemy M80 NGC6231 C76 NGC6302-Bug C69 NGC6334" },
+                { id: 74, name: "Sculptor", features: "Sculptor Alpha-Sculptoris Beta-Sculptoris NGC253 C65 NGC55 C72 NGC288" },
+                { id: 75, name: "Scutum", features: "Shield Alpha-Scuti Beta-Scuti M11-Wild-Duck M26 NGC6712" },
+                { id: 76, name: "Serpens", features: "Serpent Unukalhai Alya M5 M16-Eagle IC4756" },
+                { id: 77, name: "Sextans", features: "Sextant Alpha-Sextantis Beta-Sextantis NGC3115-Spindle C53" },
+                { id: 78, name: "Taurus", features: "Bull Aldebaran Elnath Alcyone V-Asterism M1-Crab M45-Pleiades Hyades C41 NGC1647 NGC1746" },
+                { id: 79, name: "Telescopium", features: "Telescope Alpha-Telescopii Zeta-Telescopii NGC6584" },
+                { id: 80, name: "Triangulum", features: "Triangle Beta-Trianguli Mothallah M33-Triangulum NGC925" },
+                { id: 81, name: "Triangulum Australe", features: "Southern Triangle Atria Beta-Trianguli-Australis NGC6025 C95" },
+                { id: 82, name: "Tucana", features: "Toucan Alpha-Tucanae Beta-Tucanae Small-Magellanic-Cloud NGC104-47-Tucanae C106 NGC362 C104" },
+                { id: 83, name: "Ursa Major", features: "Great Bear Dubhe Merak Phecda Megrez Alioth Mizar Alkaid Big-Dipper M81 M82 M97-Owl M101-Pinwheel M108 M109 NGC3079" },
+                { id: 84, name: "Ursa Minor", features: "Little Bear Polaris Kochab Pherkad Little-Dipper NGC6217" },
+                { id: 85, name: "Vela", features: "Sails Suhail Alsephina Regor False-Cross NGC2547 NGC3132-Eight-Burst C74 NGC3201 C79 IC2391 C85" },
+                { id: 86, name: "Virgo", features: "Virgin Spica Vindemiatrix Porrima Zavijava M49 M58 M59 M60 M61 M84 M86 M87 M89 M90 M104-Sombrero NGC4526" },
+                { id: 87, name: "Volans", features: "Flying Fish Beta-Volantis Gamma-Volantis NGC2442" },
+                { id: 88, name: "Vulpecula", features: "Fox Anser Alpha-Vulpeculae M27-Dumbbell NGC6940 NGC6885 C37 Coathanger-Asterism" }
+            ];
+
+            const input = document.getElementById("search-input");
+            const suggestionsList = document.getElementById("suggestions");
+            const card = document.getElementById('displayImage');
+            const panels = document.querySelectorAll('.panel');
+
+            input.addEventListener("input", () => {
+                const query = input.value.toLowerCase().trim();
+                suggestionsList.innerHTML = "";
+
+                if (!query) return;
+
+                // Match against multiple fields using OR (||)
+                const matches = constellations.filter(constellation =>
+                    constellation.name.toLowerCase().includes(query) ||
+                    constellation.features.toLowerCase().includes(query)
+                );
+
+                matches.forEach(constellation => {
+                    const li = document.createElement("li");
+                    li.innerHTML = `
+                  <span class="item-title">${constellation.name}</span>
+                  <span class="item-meta">${constellation.features}</span>
+                `;
+
+                    // Fill the input with the primary value on click
+                    li.addEventListener("click", () => {
+                        input.value = constellation.name;
+                        suggestionsList.innerHTML = "";
+                        if (constellation.name) {
+                            displayImage.src = constellation.name.replaceAll(" ", "_") + "_IAU.svg";
+                            displayImage.alt = constellation.name + " image";
+                            displayImage.style.display = 'block';
+                            panels.forEach(panel => panel.classList.remove('active'));
+                            document.getElementById(constellation.id).classList.add('active');
+                        } else {
+                            displayImage.style.display = 'none';
+                            displayImage.src = '';
+                            panels.forEach(panel => panel.classList.remove('active'));
+                        }
+                    });
+
+                    suggestionsList.appendChild(li);
+                });
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener("click", (e) => {
+                if (!e.target.closest(".search-container")) {
+                    suggestionsList.innerHTML = "";
+                }
+            });
+        </script>
+    </main>
+
+</body>
+
+</html>
