@@ -235,7 +235,7 @@
         </label>
 
         <label class="theme-switch" aria-label="Toggle dark mode">
-            <input type="checkbox" id="theme-toggle" checked>
+            <input type="checkbox" id="theme-toggle">
             <span class="slider">
                 <!-- Sun Icon -->
                 <svg class="icon sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -1809,139 +1809,267 @@ Stock 1: open cluster 19 stars spanning 52’, about 3.5 deg southeast Albireo a
         <script>
             // Each item has multiple fields to search against
             const constellations = [
-                { id: 1, name: "Andromeda", features: "Chained Maiden Alpheratz Mirach Almach M31 M32 M110 NGC752 C22 NGC7662 C18" },
-                { id: 2, name: "Antlia", features: "Air Pump Alpha-Antliae NGC2997 NGC3132" },
-                { id: 3, name: "Apus", features: "Bird of Paradise Alpha-Apodis NGC6101 IC4499" },
-                { id: 4, name: "Aquarius", features: "Water Bearer Sadalsuud Sadalmelik Skat M2 M72 M73 NGC7009 C55 NGC7293 C63" },
-                { id: 5, name: "Aquila", features: "Eagle Altair Tarazed Alshain NGC6709 NGC6755 NGC6781" },
-                { id: 6, name: "Ara", features: "Altar Beta-Arae Alpha-Arae NGC6193 C82 NGC6397 C86 NGC6352" },
-                { id: 7, name: "Aries", features: "Ram Hamal Sheratan Mesarthim NGC772 NGC697" },
-                { id: 8, name: "Auriga", features: "Charioteer Capella Menkalinan Elnath M36 M37 M38 IC405 C31 IC410 NGC1931" },
-                { id: 9, name: "Boötes", features: "Herdsman Arcturus Izar Muphrid Kite-Asterism NGC5466 NGC5248" },
-                { id: 10, name: "Caelum", features: "Engraving Tool Alpha-Caeli Gamma-Caeli NGC1679" },
-                { id: 11, name: "Camelopardalis", features: "Giraffe Beta-Camelopardalis Kemble's-Cascade NGC1502 NGC2403 C7 IC342 C5" },
-                { id: 12, name: "Cancer", features: "Crab Acubens Tarf Asellus-Australis M44-Beehive M67 NGC2775" },
-                { id: 13, name: "Canes Venatici", features: "Hunting Dogs Cor-Caroli Chara M51-Whirlpool M63-Sunflower M94 M106 M3 NGC4631 C32" },
-                { id: 14, name: "Canis Major", features: "Great Dog Sirius Adhara Wezen Mirzam M41 NGC2362 C64 NGC2359" },
-                { id: 15, name: "Canis Minor", features: "Little Dog Procyon Gomeisa NGC2485" },
-                { id: 16, name: "Capricornus", features: "Sea Goat Deneb-Algedi Dabih Algedi M30 NGC6907" },
-                { id: 17, name: "Carina", features: "Keel Canopus Miaplacidus Avior False-Cross NGC3372 C92 NGC2516 C96 NGC2808 IC2602 C102" },
-                { id: 18, name: "Cassiopeia", features: "Queen Schedar Caph Navi Ruchbah W-Asterism M52 M103 NGC457 C13 NGC7789 IC1805 IC1848 NGC281" },
-                { id: 19, name: "Centaurus", features: "Centaur Alpha-Centauri Hadar Menkent NGC5139-Omega-Centauri C80 NGC5128-Centaurus-A C77 NGC3766 C97 NGC3918" },
-                { id: 20, name: "Cepheus", features: "King Alderamin Alfirk Errai House-Asterism NGC6946 C12 NGC7023 C4 IC1396 NGC188 C1" },
-                { id: 21, name: "Cetus", features: "Whale Diphda Menkar Mira M77 NGC246 C56 NGC247 C62" },
-                { id: 22, name: "Chamaeleon", features: "Chameleon Alpha-Chamaeleontis Gamma-Chamaeleontis NGC3195 C109" },
-                { id: 23, name: "Circinus", features: "Compass Alpha-Circini Beta-Circini NGC5823 C88" },
-                { id: 24, name: "Columba", features: "Dove Phact Wazn NGC1851 C73 NGC1792" },
-                { id: 25, name: "Coma Berenices", features: "Berenice's Hair Beta-Comae-Berenices Diadem M53 M64-Black-Eye M85 M88 M91 M98 M99 M100 NGC4565 C38 Melotte-111" },
-                { id: 26, name: "Corona Australis", features: "Southern Crown Meridiana Alpha-Coronae-Australis NGC6541 C78 NGC6729" },
-                { id: 27, name: "Corona Borealis", features: "Northern Crown Alphecca Nusakan Abell-2065" },
-                { id: 28, name: "Corvus", features: "Crow Gienah Kraz Algorab NGC4038 C60 NGC4039 C61 NGC4361" },
-                { id: 29, name: "Crater", features: "Cup Delta-Crateris Alkes NGC3511 NGC3887" },
-                { id: 30, name: "Crux", features: "Southern Cross Acrux Mimosa Gacrux Imai Southern-Cross NGC4755-Jewel-Box C94 Coalsack-Nebula C99" },
-                { id: 31, name: "Cygnus", features: "Swan Deneb Albireo Sadr Gienah Northern-Cross M29 M39 NGC6960 C34 NGC6992 C33 NGC7000 C20 NGC6826 C15 IC5070" },
-                { id: 32, name: "Delphinus", features: "Dolphin Sualocin Rotanev Job's-Coffin NGC6934 C47 NGC7006 C42" },
-                { id: 33, name: "Dorado", features: "Dolphinfish Alpha-Doradus Beta-Doradus Large-Magellanic-Cloud NGC2070-Tarantula C103" },
-                { id: 34, name: "Draco", features: "Dragon Eltanin Rastaban Thuban Lozenge-Asterism M102 NGC6543-Cat's-Eye C6 NGC5907" },
-                { id: 35, name: "Equuleus", features: "Little Horse Kitalpha Alpha-Equulei NGC7015" },
-                { id: 36, name: "Eridanus", features: "River Achernar Cursa Zaurak NGC1535 NGC1291 NGC1300 C51 IC2118" },
-                { id: 37, name: "Fornax", features: "Furnace Alpha-Fornacis Beta-Fornacis NGC1316 NGC1365 Fornax-Cluster" },
-                { id: 38, name: "Gemini", features: "Twins Pollux Castor Alhena Tejat M35 NGC2392-Eskimo C39 NGC2158 IC443" },
-                { id: 39, name: "Grus", features: "Crane Alnair Tiaki Al-Dhanab Grus-Quartet NGC7582 NGC7552" },
-                { id: 40, name: "Hercules", features: "Hero Kornephoros Rasalgethi Keystone-Asterism M13 M92 NGC6210" },
-                { id: 41, name: "Horologium", features: "Clock Alpha-Horologii R-Horologii NGC1261 C87" },
-                { id: 42, name: "Hydra", features: "Water Snake Alphard Gamma-Hydrae M48 M68 M83 NGC3242-Ghost-of-Jupiter C59" },
-                { id: 43, name: "Hydrus", features: "Little Water Snake Beta-Hydri Alpha-Hydri NGC1466" },
-                { id: 44, name: "Indus", features: "Indian The-Persian Alpha-Indi NGC7090 NGC7049" },
-                { id: 45, name: "Lacerta", features: "Lizard Alpha-Lacertae Beta-Lacertae NGC7243 C16 NGC7209" },
-                { id: 46, name: "Leo", features: "Lion Regulus Denebola Algieba Zosma Sickle-Asterism M65 M66 M95 M96 M105 NGC3628 NGC2903" },
-                { id: 47, name: "Leo Minor", features: "Little Lion Praecipua Beta-Leonis-Minoris NGC3344 NGC3432" },
-                { id: 48, name: "Lepus", features: "Hare Arneb Nihal M79 NGC2017 IC418" },
-                { id: 49, name: "Libra", features: "Scales Zubeneschamali Zubenelgenubi Brachium NGC5897" },
-                { id: 50, name: "Lupus", features: "Wolf Alpha-Lupi Beta-Lupi NGC5822 NGC5986 IC4406" },
-                { id: 51, name: "Lynx", features: "Lynx Alpha-Lyncis 38-Lyncis NGC2419 C25 NGC2683" },
-                { id: 52, name: "Lyra", features: "Lyre Vega Sheliak Sulafat Epsilon-Lyrae M57-Ring M56" },
-                { id: 53, name: "Mensa", features: "Table Mountain Alpha-Mensae Gamma-Mensae NGC1841" },
-                { id: 54, name: "Microscopium", features: "Microscope Gamma-Microscopii Alpha-Microscopii NGC6925" },
-                { id: 55, name: "Monoceros", features: "Unicorn Beta-Monocerotis Alpha-Monocerotis M50 NGC2244-Rosette C50 NGC2264 C41 NGC2261 C46" },
-                { id: 56, name: "Musca", features: "Fly Alpha-Muscae Beta-Muscae NGC4833 C105 NGC4372 C108 NGC5189" },
-                { id: 57, name: "Norma", features: "Carpenter's Square Gamma2-Normae Epsilon-Normae NGC6067 C89 NGC6087 C81" },
-                { id: 58, name: "Octans", features: "Octant Nu-Octantis Sigma-Octantis Melotte-227" },
-                { id: 59, name: "Ophiuchus", features: "Serpent Bearer Rasalhague Sabik Cebalrai M9 M10 M12 M14 M19 M62 M107 NGC6572 IC4665" },
-                { id: 60, name: "Orion", features: "Hunter Betelgeuse Rigel Bellatrix Mintaka Alnilam Alnitak Saiph Orion's-Belt M42 M43 M78 NGC2024 NGC1977 IC434" },
-                { id: 61, name: "Pavo", features: "Peacock Peacock Beta-Pavonis NGC6752 C93 NGC6744 C101" },
-                { id: 62, name: "Pegasus", features: "Winged Horse Markab Scheat Algenib Enif Great-Square M15 NGC7331 C30 NGC7479 C44" },
-                { id: 63, name: "Perseus", features: "Hero Mirfak Algol Atik M34 M76 NGC869 C14 NGC884 C14 NGC1499-California NGC1333 NGC1275 C24" },
-                { id: 64, name: "Phoenix", features: "Phoenix Ankaa Beta-Phoenicis NGC625" },
-                { id: 65, name: "Pictor", features: "Painter's Easel Alpha-Pictoris Beta-Pictoris Kapteyn's-Star NGC1705" },
-                { id: 66, name: "Pisces", features: "Fishes Alpherg Fumalsamakah Circlet-Asterism M74 NGC524" },
-                { id: 67, name: "Piscis Austrinus", features: "Southern Fish Fomalhaut Lacaille-9352 NGC7314" },
-                { id: 68, name: "Puppis", features: "Stern Naos Tureis Asmidiske M46 M47 M93 NGC2477 C71 NGC2451 NGC2440" },
-                { id: 69, name: "Pyxis", features: "Compass Alpha-Pyxidis Beta-Pyxidis NGC2613 NGC2818" },
-                { id: 70, name: "Reticulum", features: "Reticle Alpha-Reticuli Beta-Reticuli NGC1313" },
-                { id: 71, name: "Sagitta", features: "Arrow Gamma-Sagittae Delta-Sagittae M71 NGC6838" },
-                { id: 72, name: "Sagittarius", features: "Archer Kaus-Australis Nunki Ascella Teapot-Asterism M8-Lagoon M20-Trifid M17-Omega M22 M24 M25 M28 M54 M55 M69 M70 M75 NGC6822 C57 NGC6537" },
-                { id: 73, name: "Scorpius", features: "Scorpion Antares Shaula Sargas Dschubba Fish-Hook M4 M6-Butterfly M7-Ptolemy M80 NGC6231 C76 NGC6302-Bug C69 NGC6334" },
-                { id: 74, name: "Sculptor", features: "Sculptor Alpha-Sculptoris Beta-Sculptoris NGC253 C65 NGC55 C72 NGC288" },
-                { id: 75, name: "Scutum", features: "Shield Alpha-Scuti Beta-Scuti M11-Wild-Duck M26 NGC6712" },
-                { id: 76, name: "Serpens", features: "Serpent Unukalhai Alya M5 M16-Eagle IC4756" },
-                { id: 77, name: "Sextans", features: "Sextant Alpha-Sextantis Beta-Sextantis NGC3115-Spindle C53" },
-                { id: 78, name: "Taurus", features: "Bull Aldebaran Elnath Alcyone V-Asterism M1-Crab M45-Pleiades Hyades C41 NGC1647 NGC1746" },
-                { id: 79, name: "Telescopium", features: "Telescope Alpha-Telescopii Zeta-Telescopii NGC6584" },
-                { id: 80, name: "Triangulum", features: "Triangle Beta-Trianguli Mothallah M33-Triangulum NGC925" },
-                { id: 81, name: "Triangulum Australe", features: "Southern Triangle Atria Beta-Trianguli-Australis NGC6025 C95" },
-                { id: 82, name: "Tucana", features: "Toucan Alpha-Tucanae Beta-Tucanae Small-Magellanic-Cloud NGC104-47-Tucanae C106 NGC362 C104" },
-                { id: 83, name: "Ursa Major", features: "Great Bear Dubhe Merak Phecda Megrez Alioth Mizar Alkaid Big-Dipper M81 M82 M97-Owl M101-Pinwheel M108 M109 NGC3079" },
-                { id: 84, name: "Ursa Minor", features: "Little Bear Polaris Kochab Pherkad Little-Dipper NGC6217" },
-                { id: 85, name: "Vela", features: "Sails Suhail Alsephina Regor False-Cross NGC2547 NGC3132-Eight-Burst C74 NGC3201 C79 IC2391 C85" },
-                { id: 86, name: "Virgo", features: "Virgin Spica Vindemiatrix Porrima Zavijava M49 M58 M59 M60 M61 M84 M86 M87 M89 M90 M104-Sombrero NGC4526" },
-                { id: 87, name: "Volans", features: "Flying Fish Beta-Volantis Gamma-Volantis NGC2442" },
-                { id: 88, name: "Vulpecula", features: "Fox Anser Alpha-Vulpeculae M27-Dumbbell NGC6940 NGC6885 C37 Coathanger-Asterism" }
+                { id: 1, name: "Andromeda", features: "Chained Maiden Alpheratz Mirach Almach M31 M32 M110 NGC752 C22 NGC7662 C18", ra: 0.73, dec: 41.0},
+                { id: 2, name: "Antlia", features: "Air Pump Alpha-Antliae NGC2997 NGC3132", ra: 10.01, dec: -34.0 },
+                { id: 3, name: "Apus", features: "Bird of Paradise Alpha-Apodis NGC6101 IC4499", ra: 16.14, dec: -75.3 },
+                { id: 4, name: "Aquarius", features: "Water Bearer Sadalsuud Sadalmelik Skat M2 M72 M73 NGC7009 C55 NGC7293 C63" , ra: 22.29, dec: -10.8 },
+                { id: 5, name: "Aquila", features: "Eagle Altair Tarazed Alshain NGC6709 NGC6755 NGC6781" , ra: 19.67, dec: 3.4},
+                { id: 6, name: "Ara", features: "Altar Beta-Arae Alpha-Arae NGC6193 C82 NGC6397 C86 NGC6352" , ra: 17.38, dec: -56.6 },
+                { id: 7, name: "Aries", features: "Ram Hamal Sheratan Mesarthim NGC772 NGC697", ra: 2.64, dec: 20.8},
+                { id: 8, name: "Auriga", features: "Charioteer Capella Menkalinan Elnath M36 M37 M38 IC405 C31 IC410 NGC1931" , ra: 6.07, dec: 42.0},
+                { id: 9, name: "Boötes", features: "Herdsman Arcturus Izar Muphrid Kite-Asterism NGC5466 NGC5248" , ra: 14.71, dec: 31.2},
+                { id: 10, name: "Caelum", features: "Engraving Tool Alpha-Caeli Gamma-Caeli NGC1679" , ra: 4.71, dec: -37.9 },
+                { id: 11, name: "Camelopardalis", features: "Giraffe Beta-Camelopardalis Kemble's-Cascade NGC1502 NGC2403 C7 IC342 C5", ra: 8.86, dec: 69.4},
+                { id: 12, name: "Cancer", features: "Crab Acubens Tarf Asellus-Australis M44-Beehive M67 NGC2775" , ra: 8.65, dec: 19.8},
+                { id: 13, name: "Canes Venatici", features: "Hunting Dogs Cor-Caroli Chara M51-Whirlpool M63-Sunflower M94 M106 M3 NGC4631 C32", ra: 13.12, dec: 40.1 },
+                { id: 14, name: "Canis Major", features: "Great Dog Sirius Adhara Wezen Mirzam M41 NGC2362 C64 NGC2359", ra: 6.83, dec: -22.1 },
+                { id: 15, name: "Canis Minor", features: "Little Dog Procyon Gomeisa NGC2485" , ra: 7.65, dec: 6.4},
+                { id: 16, name: "Capricornus", features: "Sea Goat Deneb-Algedi Dabih Algedi M30 NGC6907" , ra: 21.05, dec: -18.0},
+                { id: 17, name: "Carina", features: "Keel Canopus Miaplacidus Avior False-Cross NGC3372 C92 NGC2516 C96 NGC2808 IC2602 C102" , ra: 8.69, dec: -63.2 },
+                { id: 18, name: "Cassiopeia", features: "Queen Schedar Caph Navi Ruchbah W-Asterism M52 M103 NGC457 C13 NGC7789 IC1805 IC1848 NGC281" , ra: 1.32, dec: 62.2},
+                { id: 19, name: "Centaurus", features: "Centaur Alpha-Centauri Hadar Menkent NGC5139-Omega-Centauri C80 NGC5128-Centaurus-A C77 NGC3766 C97 NGC3918" , ra: 13.07, dec: -47.3 },
+                { id: 20, name: "Cepheus", features: "King Alderamin Alfirk Errai House-Asterism NGC6946 C12 NGC7023 C4 IC1396 NGC188 C1" , ra: 22.00, dec: 71.0},
+                { id: 21, name: "Cetus", features: "Whale Diphda Menkar Mira M77 NGC246 C56 NGC247 C62", ra: 1.67, dec: -7.2 },
+                { id: 22, name: "Chamaeleon", features: "Chameleon Alpha-Chamaeleontis Gamma-Chamaeleontis NGC3195 C109" , ra: 10.69, dec: -79.2 },
+                { id: 23, name: "Circinus", features: "Compass Alpha-Circini Beta-Circini NGC5823 C88", ra: 14.58, dec: -63.0},
+                { id: 24, name: "Columba", features: "Dove Phact Wazn NGC1851 C73 NGC1792", ra: 5.86, dec: -35.1},
+                { id: 25, name: "Coma Berenices", features: "Berenice's Hair Beta-Comae-Berenices Diadem M53 M64-Black-Eye M85 M88 M91 M98 M99 M100 NGC4565 C38 Melotte-111" , ra: 12.79, dec: 23.3 },
+                { id: 26, name: "Corona Australis", features: "Southern Crown Meridiana Alpha-Coronae-Australis NGC6541 C78 NGC6729" , ra: 18.65, dec: -41.1 },
+                { id: 27, name: "Corona Borealis", features: "Northern Crown Alphecca Nusakan Abell-2065" , ra: 15.84, dec: 32.6},
+                { id: 28, name: "Corvus", features: "Crow Gienah Kraz Algorab NGC4038 C60 NGC4039 C61 NGC4361", ra: 12.44, dec: -18.4},
+                { id: 29, name: "Crater", features: "Cup Delta-Crateris Alkes NGC3511 NGC3887", ra: 11.40, dec: -15.9},
+                { id: 30, name: "Crux", features: "Southern Cross Acrux Mimosa Gacrux Imai Southern-Cross NGC4755-Jewel-Box C94 Coalsack-Nebula C99" , ra: 12.45, dec: -60.2 },
+                { id: 31, name: "Cygnus", features: "Swan Deneb Albireo Sadr Gienah Northern-Cross M29 M39 NGC6960 C34 NGC6992 C33 NGC7000 C20 NGC6826 C15 IC5070", ra: 20.59, dec: 44.5},
+                { id: 32, name: "Delphinus", features: "Dolphin Sualocin Rotanev Job's-Coffin NGC6934 C47 NGC7006 C42", ra: 20.69, dec: 11.7},
+                { id: 33, name: "Dorado", features: "Dolphinfish Alpha-Doradus Beta-Doradus Large-Magellanic-Cloud NGC2070-Tarantula C103", ra: 5.24, dec: -59.4},
+                { id: 34, name: "Draco", features: "Dragon Eltanin, rastaban Thuban Lozenge-Asterism M102 NGC6543-Cat's-Eye C6 NGC5907", ra: 15.14, dec: 67.0},
+                { id: 35, name: "Equuleus", features: "Little Horse Kitalpha Alpha-Equulei NGC7015", ra: 21.19, dec: 7.8 },
+                { id: 36, name: "Eridanus", features: "River Achernar Cursa Zaurak NGC1535 NGC1291 NGC1300 C51 IC2118", ra: 3.30, dec: -28.8},
+                { id: 37, name: "Fornax", features: "Furnace Alpha-Fornacis Beta-Fornacis NGC1316 NGC1365 Fornax-Cluster" , ra: 2.80, dec: -31.6},
+                { id: 38, name: "Gemini", features: "Twins Pollux Castor Alhena Tejat M35 NGC2392-Eskimo C39 NGC2158 IC443", ra: 7.07, dec: 22.6 },
+                { id: 39, name: "Grus", features: "Crane Alnair Tiaki Al-Dhanab Grus-Quartet NGC7582 NGC7552" , ra: 22.46, dec: -46.4},
+                { id: 40, name: "Hercules", features: "Hero Kornephoros, rasalgethi Keystone-Asterism M13 M92 NGC6210" , ra: 17.39, dec: 27.5},
+                { id: 41, name: "Horologium", features: "Clock Alpha-Horologii R-Horologii NGC1261 C87", ra: 3.28, dec: -53.3 },
+                { id: 42, name: "Hydra", features: "Water Snake Alphard Gamma-Hydrae M48 M68 M83 NGC3242-Ghost-of-Jupiter C59", ra: 11.61, dec: -14.5},
+                { id: 43, name: "Hydrus", features: "Little Water Snake Beta-Hydri Alpha-Hydri NGC1466", ra: 2.34, dec: -69.9 },
+                { id: 44, name: "Indus", features: "Indian The-Persian Alpha-Indi NGC7090 NGC7049", ra: 21.97, dec: -59.7},
+                { id: 45, name: "Lacerta", features: "Lizard Alpha-Lacertae Beta-Lacertae NGC7243 C16 NGC7209", ra: 22.46, dec: 45.3},
+                { id: 46, name: "Leo", features: "Lion Regulus Denebola Algieba Zosma Sickle-Asterism M65 M66 M95 M96 M105 NGC3628 NGC2903", ra: 10.67, dec: 13.1 },
+                { id: 47, name: "Leo Minor", features: "Little Lion Praecipua Beta-Leonis-Minoris NGC3344 NGC3432", ra: 10.25, dec: 32.1},
+                { id: 48, name: "Lepus", features: "Hare Arneb Nihal M79 NGC2017 IC418", ra: 5.57, dec: -19.0 },
+                { id: 49, name: "Libra", features: "Scales Zubeneschamali Zubenelgenubi Brachium NGC5897" , ra: 15.20, dec: -15.2},
+                { id: 50, name: "Lupus", features: "Wolf Alpha-Lupi Beta-Lupi NGC5822 NGC5986 IC4406" , ra: 15.22, dec: -42.7},
+                { id: 51, name: "Lynx", features: "Lynx Alpha-Lyncis 38-Lyncis NGC2419 C25 NGC2683", ra: 7.99, dec: 47.5 },
+                { id: 52, name: "Lyra", features: "Lyre Vega Sheliak Sulafat Epsilon-Lyrae M57-Ring M56" , ra: 18.85, dec: 36.7 },
+                { id: 53, name: "Mensa", features: "Table Mountain Alpha-Mensae Gamma-Mensae NGC1841" , ra: 5.41, dec: -77.5},
+                { id: 54, name: "Microscopium", features: "Microscope Gamma-Microscopii Alpha-Microscopii NGC6925", ra: 20.96, dec: -36.3},
+                { id: 55, name: "Monoceros", features: "Unicorn Beta-Monocerotis Alpha-Monocerotis M50 NGC2244-Rosette C50 NGC2264 C41 NGC2261 C46", ra: 7.06, dec: -5.7 },
+                { id: 56, name: "Musca", features: "Fly Alpha-Muscae Beta-Muscae NGC4833 C105 NGC4372 C108 NGC5189", ra: 12.59, dec: -70.2 },
+                { id: 57, name: "Norma", features: "Carpenter's Square Gamma2-Normae Epsilon-Normae NGC6067 C89 NGC6087 C81" , ra: 15.90, dec: -51.4 },
+                { id: 58, name: "Octans", features: "Octant Nu-Octantis Sigma-Octantis Melotte-227", ra: 23.00, dec: -82.2 },
+                { id: 59, name: "Ophiuchus", features: "Serpent Bearer, rasalhague Sabik Cebalrai M9 M10 M12 M14 M19 M62 M107 NGC6572 IC4665" , ra: 17.39, dec: -7.9 },
+                { id: 60, name: "Orion", features: "Hunter Betelgeuse Rigel Bellatrix Mintaka Alnilam Alnitak Saiph Orion's-Belt M42 M43 M78 NGC2024 NGC1977 IC434", ra: 5.58, dec: 5.9 },
+                { id: 61, name: "Pavo", features: "Peacock Peacock Beta-Pavonis NGC6752 C93 NGC6744 C101" , ra: 19.61, dec: -65.8},
+                { id: 62, name: "Pegasus", features: "Winged Horse Markab Scheat Algenib Enif Great-Square M15 NGC7331 C30 NGC7479 C44", ra: 22.70, dec: 19.5 },
+                { id: 63, name: "Perseus", features: "Hero Mirfak Algol Atik M34 M76 NGC869 C14 NGC884 C14 NGC1499-California NGC1333 NGC1275 C24", ra: 3.18, dec: 45.0},
+                { id: 64, name: "Phoenix", features: "Phoenix Ankaa Beta-Phoenicis NGC625", ra: 0.93, dec: -48.6},
+                { id: 65, name: "Pictor", features: "Painter's Easel Alpha-Pictoris Beta-Pictoris Kapteyn's-Star NGC1705" , ra: 5.71, dec: -53.5},
+                { id: 66, name: "Pisces", features: "Fishes Alpherg Fumalsamakah Circlet-Asterism M74 NGC524" , ra: 0.48, dec: 13.7},
+                { id: 67, name: "Piscis Austrinus", features: "Southern Fish Fomalhaut Lacaille-9352 NGC7314" , ra: 22.29, dec: -30.6},
+                { id: 68, name: "Puppis", features: "Stern Naos Tureis Asmidiske M46 M47 M93 NGC2477 C71 NGC2451 NGC2440" , ra: 7.26, dec: -31.2},
+                { id: 69, name: "Pyxis", features: "Compass Alpha-Pyxidis Beta-Pyxidis NGC2613 NGC2818", ra: 8.95, dec: -27.4 },
+                { id: 70, name: "Reticulum", features: "Reticle Alpha-Reticuli Beta-Reticuli NGC1313" , ra: 3.92, dec: -60.0},
+                { id: 71, name: "Sagitta", features: "Arrow Gamma-Sagittae Delta-Sagittae M71 NGC6838", ra: 19.65, dec: 18.9},
+                { id: 72, name: "Sagittarius", features: "Archer Kaus-Australis Nunki Ascella Teapot-Asterism M8-Lagoon M20-Trifid M17-Omega M22 M24 M25 M28 M54 M55 M69 M70 M75 NGC6822 C57 NGC6537" , ra: 19.10, dec: -28.5},
+                { id: 73, name: "Scorpius", features: "Scorpion Antares Shaula Sargas Dschubba Fish-Hook M4 M6-Butterfly M7-Ptolemy M80 NGC6231 C76 NGC6302-Bug C69 NGC6334" , ra: 16.89, dec: -27.0 },
+                { id: 74, name: "Sculptor", features: "Sculptor Alpha-Sculptoris Beta-Sculptoris NGC253 C65 NGC55 C72 NGC288" , ra: 0.44, dec: -32.1},
+                { id: 75, name: "Scutum", features: "Shield Alpha-Scuti Beta-Scuti M11-Wild-Duck M26 NGC6712" , ra: 18.67, dec: -9.9},
+                { id: 76, name: "Serpens", features: "Serpent Unukalhai Alya M5 M16-Eagle IC4756" , ra: 16.95, dec: 6.1},
+                { id: 77, name: "Sextans", features: "Sextant Alpha-Sextantis Beta-Sextantis NGC3115-Spindle C53" , ra: 10.27, dec: -2.6},
+                { id: 78, name: "Taurus", features: "Bull Aldebaran Elnath Alcyone V-Asterism M1-Crab M45-Pleiades Hyades C41 NGC1647 NGC1746", ra: 4.70, dec: 14.9},
+                { id: 79, name: "Telescopium", features: "Telescope Alpha-Telescopii Zeta-Telescopii NGC6584" , ra: 19.33, dec: -51.0},
+                { id: 80, name: "Triangulum", features: "Triangle Beta-Trianguli Mothallah M33-Triangulum NGC925" , ra: 2.18, dec: 31.5},
+                { id: 81, name: "Triangulum Australe", features: "Southern Triangle Atria Beta-Trianguli-Australis NGC6025 C95", ra: 16.08, dec: -65.4 },
+                { id: 82, name: "Tucana", features: "Toucan Alpha-Tucanae Beta-Tucanae Small-Magellanic-Cloud NGC104-47-Tucanae C106 NGC362 C104" , ra: 23.78, dec: -65.8},
+                { id: 83, name: "Ursa Major", features: "Great Bear Dubhe Merak Phecda Megrez Alioth Mizar Alkaid Big-Dipper M81 M82 M97-Owl M101-Pinwheel M108 M109 NGC3079" , ra: 11.31, dec: 50.7},
+                { id: 84, name: "Ursa Minor", features: "Little Bear Polaris Kochab Pherkad Little-Dipper NGC6217", ra: 15.00, dec: 77.7},
+                { id: 85, name: "Vela", features: "Sails Suhail Alsephina Regor False-Cross NGC2547 NGC3132-Eight-Burst C74 NGC3201 C79 IC2391 C85", ra: 9.58, dec: -47.2 },
+                { id: 86, name: "Virgo", features: "Virgin Spica Vindemiatrix Porrima Zavijava M49 M58 M59 M60 M61 M84 M86 M87 M89 M90 M104-Sombrero NGC4526" , ra: 13.41, dec: -4.2},
+                { id: 87, name: "Volans", features: "Flying Fish Beta-Volantis Gamma-Volantis NGC2442", ra: 7.80, dec: -69.8},
+                { id: 88, name: "Vulpecula", features: "Fox Anser Alpha-Vulpeculae M27-Dumbbell NGC6940 NGC6885 C37 Coathanger-Asterism", ra: 20.23, dec: 24.4}
             ];
+
+            // Helper: Degrees to Radians & vice versa
+            const toRad = deg => deg * Math.PI / 180;
+            const toDeg = rad => rad * 180 / Math.PI;
+
+            // 1. Calculate Greenwich Mean Sidereal Time (GMST) in degrees
+            function getGMST(date) {
+                // Julian Date calculation
+                const jd = (date.getTime() / 86400000) + 2440587.5;
+                const d = jd - 2451545.0; // Days since J2000.0
+                let gmst = 280.46061837 + 360.98564736629 * d;
+                return ((gmst % 360) + 360) % 360; // Normalize 0-360
+            }
+
+            // 2. Convert RA/Dec to Altitude/Azimuth
+            function getHorizontalCoords(raHours, decDeg, latDeg, lonDeg, date) {
+                const gmst = getGMST(date);
+                const lst = ((gmst + lonDeg) % 360 + 360) % 360; // Local Sidereal Time in degrees
+                const raDeg = raHours * 15; // Convert RA hours to degrees
+                
+                // Hour Angle (HA)
+                let ha = ((lst - raDeg) % 360 + 360) % 360;
+                
+                const haRad = toRad(ha);
+                const decRad = toRad(decDeg);
+                const latRad = toRad(latDeg);
+
+                // Calculate Altitude
+                const sinAlt = Math.sin(decRad) * Math.sin(latRad) + 
+                            Math.cos(decRad) * Math.cos(latRad) * Math.cos(haRad);
+                const altRad = Math.asin(sinAlt);
+
+                // Calculate Azimuth
+                const cosAz = (Math.sin(decRad) - Math.sin(altRad) * Math.sin(latRad)) / 
+                            (Math.cos(altRad) * Math.cos(latRad));
+                let azDeg = toDeg(Math.acos(Math.min(Math.max(cosAz, -1), 1)));
+                
+                if (Math.sin(haRad) > 0) {
+                    azDeg = 360 - azDeg;
+                }
+
+                return { altitude: toDeg(altRad), azimuth: azDeg };
+            }
+
+            // Convert azimuth degrees to compass direction
+            function getCompassDirection(az) {
+                const dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+                return dirs[Math.round(az / 45) % 8];
+            }
+
+            function updateTimeWithAmPm(dateObj, timeStr) {
+                // Match formats like "9pm", "3 AM", "3:45 PM", or "12:00 am"
+                const match = timeStr.trim().match(/^(\d{1,2})(?::(\d{2}))?\s*(AM|PM)$/i);
+                if (!match) throw new Error("Invalid time format");
+
+                let hours = parseInt(match[1], 10);
+                const minutes = match[2] ? parseInt(match[2], 10) : 0;
+                const period = match[3].toUpperCase();
+
+                // Validate 12-hour clock boundaries
+                if (hours < 1 || hours > 12 || minutes > 59) {
+                    throw new Error("Invalid time values");
+                }
+
+                // Convert 12-hour format to 24-hour format
+                if (period === "PM" && hours !== 12) {
+                    hours += 12;
+                } else if (period === "AM" && hours === 12) {
+                    hours = 0;
+                }
+
+                // Update the Date object
+                dateObj.setHours(hours, minutes, 0, 0);
+                return dateObj;
+            }
 
             const input = document.getElementById("search-input");
             const suggestionsList = document.getElementById("suggestions");
             const card = document.getElementById('displayImage');
             const panels = document.querySelectorAll('.panel');
 
+            // Sydney coordinates:
+            const lat = -33.87;
+            const lon = 151.21;
+
             input.addEventListener("input", () => {
                 const query = input.value.toLowerCase().trim();
                 suggestionsList.innerHTML = "";
 
-                if (!query) return;
+                if (!query) {
+                    displayImage.style.display = 'none';
+                                    displayImage.src = '';
+                                    panels.forEach(panel => panel.classList.remove('active'));
+                    return;
+                }
 
-                // Match against multiple fields using OR (||)
-                const matches = constellations.filter(constellation =>
-                    constellation.name.toLowerCase().includes(query) ||
-                    constellation.features.toLowerCase().includes(query)
-                );
+                if (query.match("now")) {
+                    // Set default input time to right now
+                    const time = new Date();
+                    //time.setMinutes(time.getMinutes() - time.getTimezoneOffset());
 
-                matches.forEach(constellation => {
-                    const li = document.createElement("li");
-                    li.innerHTML = `
-                  <span class="item-title">${constellation.name}</span>
-                  <span class="item-meta">${constellation.features}</span>
-                `;
+                    // Calculate coodinates of all constellations:
+                    const calculated = constellations.map(constellation => {
+                        const pos = getHorizontalCoords(constellation.ra, constellation.dec, lat, lon, time);
+                        return { ...constellation, ...pos };
+                    })
+                    
+                    // Only show constellations whose altitude at least 15 degree above horizon
+                    calculated.forEach(constellation => {
+                        if (constellation.altitude > 15) { 
+                            const li = document.createElement("li");
+                            li.innerHTML = `
+                    <span class="item-title">${constellation.name}</span>
+                    <span class="item-meta">${constellation.features}</span>
+                    `;
 
-                    // Fill the input with the primary value on click
-                    li.addEventListener("click", () => {
-                        input.value = constellation.name;
-                        suggestionsList.innerHTML = "";
-                        if (constellation.name) {
-                            displayImage.src = constellation.name.replaceAll(" ", "_") + "_IAU.svg";
-                            displayImage.alt = constellation.name + " image";
-                            displayImage.style.display = 'block';
-                            panels.forEach(panel => panel.classList.remove('active'));
-                            document.getElementById(constellation.id).classList.add('active');
-                        } else {
-                            displayImage.style.display = 'none';
-                            displayImage.src = '';
-                            panels.forEach(panel => panel.classList.remove('active'));
+                            // Fill the input with the primary value on click
+                            li.addEventListener("click", () => {
+                                input.value = constellation.name;
+                                suggestionsList.innerHTML = "";
+                                if (constellation.name) {
+                                    displayImage.src = constellation.name.replaceAll(" ", "_") + "_IAU.svg";
+                                    displayImage.alt = constellation.name + " image";
+                                    displayImage.style.display = 'block';
+                                    panels.forEach(panel => panel.classList.remove('active'));
+                                    document.getElementById(constellation.id).classList.add('active');
+                                } else {
+                                    displayImage.style.display = 'none';
+                                    displayImage.src = '';
+                                    panels.forEach(panel => panel.classList.remove('active'));
+                                }
+                            });
+
+                            suggestionsList.appendChild(li);
                         }
                     });
 
-                    suggestionsList.appendChild(li);
-                });
+                } else {
+
+                    // Match against multiple fields using OR (||)
+                    const matches = constellations.filter(constellation =>
+                        constellation.name.toLowerCase().includes(query) ||
+                        constellation.features.toLowerCase().includes(query)
+                    );
+
+                    matches.forEach(constellation => {
+                        const li = document.createElement("li");
+                        li.innerHTML = `
+                    <span class="item-title">${constellation.name}</span>
+                    <span class="item-meta">${constellation.features}</span>
+                    `;
+
+                        // Fill the input with the primary value on click
+                        li.addEventListener("click", () => {
+                            input.value = constellation.name;
+                            suggestionsList.innerHTML = "";
+                            if (constellation.name) {
+                                displayImage.src = constellation.name.replaceAll(" ", "_") + "_IAU.svg";
+                                displayImage.alt = constellation.name + " image";
+                                displayImage.style.display = 'block';
+                                panels.forEach(panel => panel.classList.remove('active'));
+                                document.getElementById(constellation.id).classList.add('active');
+                            } else {
+                                displayImage.style.display = 'none';
+                                displayImage.src = '';
+                                panels.forEach(panel => panel.classList.remove('active'));
+                            }
+                        });
+
+                        suggestionsList.appendChild(li);
+                    });
+                }
             });
 
             // Close dropdown when clicking outside
@@ -1952,7 +2080,10 @@ Stock 1: open cluster 19 stars spanning 52’, about 3.5 deg southeast Albireo a
             });
         </script>
     </main>
+<div id="result">
+</div>
 
+</div>
 </body>
 
 </html>
